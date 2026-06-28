@@ -4,6 +4,10 @@
 threads, file sharing, presence, notifications, and an admin console — built as a
 single-page React app on top of the [`rsmc-engine`](../rsmc-engine) backend.
 
+<p align="center">
+  <img src="docs/rsmc-admin.png" width="49%" alt="RSMC admin screen" />
+  <img src="docs/rsmc-light.png" width="49%" alt="RSMC main screen" />
+</p>
 
 ---
 
