@@ -1,0 +1,598 @@
+/* ===========================================================================
+   RSMC — design system
+   ---------------------------------------------------------------------------
+   A familiar, professional team-collaboration surface (Slack / Mattermost
+   lineage) with its own identity: an indigo→violet brand, a calm light
+   workspace, dense but breathable spacing, and clear role/permission states.
+   ========================================================================= */
+
+:root {
+  /* ---- brand ---- */
+  --brand: #4f46e5;
+  --brand-600: #4f46e5;
+  --brand-500: #6366f1;
+  --brand-400: #818cf8;
+  --brand-soft: #eef2ff;
+  --brand-softer: #f5f7ff;
+  --violet: #a855f7;
+  --brand-grad: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+
+  /* ---- neutral surfaces (light) ---- */
+  --bg-app: #f7f8fa;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f3f4f6;
+  --bg-hover: #f1f2f6;
+  --bg-active: #eef2ff;
+
+  /* the dark workspace nav rail (brand-tinted slate) */
+  --nav-bg: #2a2342;
+  --nav-bg-2: #221c38;
+  --nav-ink: #d8d4e8;
+  --nav-ink-dim: #9a93b8;
+  --nav-active: #4f46e5;
+  --nav-hover: rgba(255, 255, 255, 0.08);
+
+  /* ---- text ---- */
+  --ink: #1a1b25;
+  --ink-2: #5b6072;
+  --ink-3: #868ba1;
+  --ink-4: #b4b8c8;
+  --on-brand: #ffffff;
+
+  /* ---- lines ---- */
+  --line: #e7e8ee;
+  --line-2: #dfe1ea;
+  --line-strong: #cdd0dc;
+
+  /* ---- status ---- */
+  --online: #2bb673;
+  --away: #e8a33d;
+  --busy: #e0556b;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --warn: #d97706;
+  --warn-soft: #fffbeb;
+  --success: #059669;
+  --success-soft: #ecfdf5;
+  --info: #2563eb;
+
+  /* role accent colors */
+  --role-admin: #7c3aed;
+  --role-owner: #d97706;
+  --role-guest: #6b7280;
+
+  /* ---- type ---- */
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* ---- geometry ---- */
+  --r-xs: 5px;
+  --r-sm: 7px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 20, 40, 0.06);
+  --shadow-md: 0 4px 16px rgba(20, 20, 40, 0.1);
+  --shadow-lg: 0 12px 40px rgba(20, 20, 40, 0.16);
+  --shadow-pop: 0 8px 28px rgba(20, 20, 40, 0.14), 0 0 0 1px rgba(20, 20, 40, 0.04);
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.014em;
+  margin: 0;
+  color: var(--ink);
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+a {
+  color: var(--brand);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+code,
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+::selection {
+  background: var(--brand-soft);
+}
+
+/* scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: var(--r-full);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-4);
+  background-clip: padding-box;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* ===========================================================================
+   Buttons
+   ========================================================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.13s var(--ease), border-color 0.13s var(--ease),
+    box-shadow 0.13s var(--ease), transform 0.06s var(--ease);
+}
+.btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--line-strong);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+}
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  background: var(--bg-hover);
+  border-color: transparent;
+}
+.btn-secondary {
+  background: var(--brand-soft);
+  border-color: var(--brand-soft);
+  color: var(--brand);
+}
+.btn-secondary:hover {
+  background: var(--brand-softer);
+  border-color: var(--brand-400);
+}
+.btn-danger {
+  color: var(--danger);
+  border-color: var(--line-2);
+}
+.btn-danger:hover {
+  background: var(--danger-soft);
+  border-color: #f3c0c0;
+}
+.btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.btn-lg {
+  height: 44px;
+  padding: 0 20px;
+  font-size: 15px;
+}
+.btn-icon {
+  width: 38px;
+  padding: 0;
+}
+.btn-icon.btn-sm {
+  width: 32px;
+}
+.btn-block {
+  width: 100%;
+}
+
+/* ===========================================================================
+   Form fields
+   ========================================================================= */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.field-hint {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.input,
+.textarea,
+.select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  font-size: 14.5px;
+  color: var(--ink);
+  transition: border-color 0.13s var(--ease), box-shadow 0.13s var(--ease);
+}
+.textarea {
+  height: auto;
+  min-height: 90px;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--ink-4);
+}
+.input-error {
+  border-color: var(--danger);
+}
+.input-error:focus {
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+
+/* ===========================================================================
+   Badges / pills / chips
+   ========================================================================= */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: var(--bg-subtle);
+  color: var(--ink-2);
+}
+.badge-admin {
+  background: #f3e8ff;
+  color: var(--role-admin);
+}
+.badge-owner {
+  background: #fef3c7;
+  color: var(--role-owner);
+}
+.badge-guest {
+  background: var(--bg-subtle);
+  color: var(--role-guest);
+}
+.badge-brand {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.badge-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-full);
+  background: var(--busy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* presence dot */
+.presence {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-full);
+  background: var(--ink-4);
+  flex-shrink: 0;
+  border: 2px solid var(--bg-surface);
+}
+.presence.online {
+  background: var(--online);
+}
+.presence.sm {
+  width: 8px;
+  height: 8px;
+  border-width: 1.5px;
+}
+
+/* ===========================================================================
+   Misc utilities
+   ========================================================================= */
+.muted {
+  color: var(--ink-3);
+}
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--line-strong);
+  border-top-color: var(--brand);
+  border-radius: var(--r-full);
+  animation: spin 0.7s linear infinite;
+}
+.spinner.on-brand {
+  border-color: rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* tooltip-ish */
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  background: var(--bg-subtle);
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+/* segmented control */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--bg-subtle);
+  border-radius: var(--r-md);
+  gap: 2px;
+}
+.segmented button {
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: background 0.12s, color 0.12s;
+}
+.segmented button.active {
+  background: var(--bg-surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+
+/* toasts */
+.toast-wrap {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2000;
+  width: min(420px, calc(100vw - 32px));
+}
+.toast {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  background: var(--ink);
+  color: #fff;
+  padding: 13px 15px;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.22s var(--ease);
+  cursor: pointer;
+}
+.toast-accent {
+  width: 4px;
+  align-self: stretch;
+  border-radius: var(--r-full);
+  background: var(--brand-400);
+  flex-shrink: 0;
+}
+.toast.error .toast-accent {
+  background: var(--busy);
+}
+.toast.success .toast-accent {
+  background: var(--online);
+}
+.toast-body {
+  flex: 1;
+  min-width: 0;
+}
+.toast-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.toast-msg {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ===========================================================================
+   Dark theme
+   ---------------------------------------------------------------------------
+   Token remap applied when <html data-theme="dark">. Because every surface,
+   line, and text color is a CSS variable, the whole app re-themes from here.
+   ========================================================================= */
+[data-theme="dark"] {
+  /* brand stays vivid but slightly lifted for contrast on dark */
+  --brand: #6366f1;
+  --brand-600: #6366f1;
+  --brand-500: #818cf8;
+  --brand-400: #a5b4fc;
+  --brand-soft: #232045;
+  --brand-softer: #1b1930;
+  --violet: #c084fc;
+
+  /* surfaces */
+  --bg-app: #14131c;
+  --bg-surface: #1b1a26;
+  --bg-subtle: #232231;
+  --bg-hover: #272636;
+  --bg-active: #2c2950;
+
+  /* the nav rail sits a touch darker than the app */
+  --nav-bg: #100f17;
+  --nav-bg-2: #0b0a10;
+  --nav-ink: #d8d4e8;
+  --nav-ink-dim: #8b86a3;
+  --nav-active: #6366f1;
+  --nav-hover: rgba(255, 255, 255, 0.07);
+
+  /* text */
+  --ink: #ecebf2;
+  --ink-2: #b3b1c4;
+  --ink-3: #8a8799;
+  --ink-4: #5e5b70;
+  --on-brand: #ffffff;
+
+  /* lines */
+  --line: #2a2937;
+  --line-2: #333143;
+  --line-strong: #423f54;
+
+  /* status — soft backgrounds need to be dark-tinted, not pale */
+  --danger-soft: #2e1a1d;
+  --warn-soft: #2c2412;
+  --success-soft: #14271f;
+  --online: #34d17f;
+
+  /* role pills */
+  --role-admin: #c4a3ff;
+  --role-owner: #f0b760;
+  --role-guest: #9a97ab;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* role badge backgrounds need dark-mode-specific tints */
+[data-theme="dark"] .badge-admin {
+  background: #2c2348;
+}
+[data-theme="dark"] .badge-owner {
+  background: #322914;
+}
+[data-theme="dark"] .badge {
+  background: var(--bg-subtle);
+}
+[data-theme="dark"] ::selection {
+  background: var(--brand-soft);
+}
+
+/* color-scheme hint so native controls (scrollbars, inputs) match */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
