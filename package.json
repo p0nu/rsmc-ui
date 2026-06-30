@@ -1,9 +1,10 @@
 {
   "name": "rsmc",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "RSMC — team collaboration client for the rsmc-engine backend.",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

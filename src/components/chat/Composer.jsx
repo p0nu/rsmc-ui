@@ -14,6 +14,67 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
   const [sending, setSending] = useState(false);
   const fileRef = useRef(null);
   const lastTyping = useRef(0);
+  const inputRef = useRef(null);
+
+  // @mention autocomplete state
+  const [mention, setMention] = useState(null); // { query, start } | null
+  const [mentionResults, setMentionResults] = useState([]);
+  const [mentionIdx, setMentionIdx] = useState(0);
+  const mentionTimer = useRef(null);
+
+  // Detect an in-progress "@query" immediately before the caret.
+  const detectMention = useCallback((value, caret) => {
+    const upTo = value.slice(0, caret);
+    const m = upTo.match(/(?:^|\s)@([\w.]*)$/);
+    if (!m) return null;
+    return { query: m[1], start: caret - m[1].length - 1 };
+  }, []);
+
+  // Debounced user lookup when a mention is active.
+  const runMentionSearch = useCallback((query) => {
+    if (mentionTimer.current) clearTimeout(mentionTimer.current);
+    mentionTimer.current = setTimeout(async () => {
+      try {
+        const users = await api.listUsers(query, 6);
+        setMentionResults(Array.isArray(users) ? users : []);
+        setMentionIdx(0);
+      } catch {
+        setMentionResults([]);
+      }
+    }, 150);
+  }, []);
+
+  function onTextChange(e) {
+    const value = e.target.value;
+    setText(value);
+    emitTyping();
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 220) + "px";
+    const m = detectMention(value, e.target.selectionStart);
+    setMention(m);
+    if (m) runMentionSearch(m.query);
+    else setMentionResults([]);
+  }
+
+  function applyMention(u) {
+    if (!mention) return;
+    const before = text.slice(0, mention.start);
+    const after = text.slice(inputRef.current?.selectionStart ?? text.length);
+    const next = `${before}@${u.username} ${after}`;
+    setText(next);
+    setMention(null);
+    setMentionResults([]);
+    requestAnimationFrame(() => {
+      const pos = before.length + u.username.length + 2;
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(pos, pos);
+        el.style.height = "auto";
+        el.style.height = Math.min(el.scrollHeight, 220) + "px";
+      }
+    });
+  }
 
   const emitTyping = useCallback(() => {
     const now = Date.now();
@@ -92,17 +153,36 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
 
       <div className="composer-box">
         <textarea
+          ref={inputRef}
           className="composer-input"
           value={text}
           placeholder={placeholder}
           rows={1}
-          onChange={(e) => {
-            setText(e.target.value);
-            emitTyping();
-            e.target.style.height = "auto";
-            e.target.style.height = Math.min(e.target.scrollHeight, 220) + "px";
-          }}
+          onChange={onTextChange}
           onKeyDown={(e) => {
+            if (mention && mentionResults.length > 0) {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setMentionIdx((i) => (i + 1) % mentionResults.length);
+                return;
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setMentionIdx((i) => (i - 1 + mentionResults.length) % mentionResults.length);
+                return;
+              }
+              if (e.key === "Enter" || e.key === "Tab") {
+                e.preventDefault();
+                applyMention(mentionResults[mentionIdx]);
+                return;
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setMention(null);
+                setMentionResults([]);
+                return;
+              }
+            }
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               send();
@@ -110,6 +190,25 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
             }
           }}
         />
+        {mention && mentionResults.length > 0 && (
+          <div className="mention-pop" role="listbox">
+            {mentionResults.map((u, i) => (
+              <button
+                key={u.id}
+                className={`mention-opt ${i === mentionIdx ? "active" : ""}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  applyMention(u);
+                }}
+                role="option"
+                aria-selected={i === mentionIdx}
+              >
+                <span className="mention-opt-name">{u.display_name || u.username}</span>
+                <span className="mention-opt-handle">@{u.username}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="composer-actions">

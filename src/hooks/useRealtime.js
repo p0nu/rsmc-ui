@@ -20,6 +20,8 @@ export function useSubscription(channelId) {
   useEffect(() => {
     if (!channelId) return;
     rt.subscribe(channelId);
-    return () => rt.unsubscribe(channelId);
+    // No unsubscribe on unmount: Workspace subscribes to all of the user's
+    // channels so background unread badges update live. Unsubscribing the
+    // active channel here on navigation would drop those events.
   }, [rt, channelId]);
 }

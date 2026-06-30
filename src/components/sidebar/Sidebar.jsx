@@ -63,16 +63,18 @@ export default function Sidebar({
           ) : (
             groups.directs.map((ch) => {
               const online = ch.peer ? presence[ch.peer.id]?.online : false;
+              const unread = ch.id !== activeId && ch.unread_count > 0 ? ch.unread_count : 0;
               return (
                 <button
                   key={ch.id}
-                  className={`sidebar-link ${ch.id === activeId ? "active" : ""}`}
+                  className={`sidebar-link ${ch.id === activeId ? "active" : ""} ${unread ? "has-unread" : ""}`}
                   onClick={() => onOpenChannel(ch.id)}
                 >
                   <Avatar user={ch.peer} size={22} online={!!online} />
                   <span className="sidebar-link-name">
                     {ch.peer ? displayName(ch.peer) : "Direct message"}
                   </span>
+                  {unread > 0 && <span className="sidebar-unread">{unread > 99 ? "99+" : unread}</span>}
                 </button>
               );
             })
@@ -106,12 +108,14 @@ function Section({ title, onAdd, addTitle, children }) {
 function ChannelRow({ channel, active, onClick }) {
   const isPrivate = channel.channel_type === "private";
   const isGroup = channel.channel_type === "group";
+  const unread = !active && channel.unread_count > 0 ? channel.unread_count : 0;
   return (
-    <button className={`sidebar-link ${active ? "active" : ""}`} onClick={onClick}>
+    <button className={`sidebar-link ${active ? "active" : ""} ${unread ? "has-unread" : ""}`} onClick={onClick}>
       <span className="sidebar-link-glyph">
         <Icon name={isPrivate ? "lock" : isGroup ? "group" : "hash"} size={16} />
       </span>
       <span className="sidebar-link-name">{channel.name || "untitled"}</span>
+      {unread > 0 && <span className="sidebar-unread">{unread > 99 ? "99+" : unread}</span>}
     </button>
   );
 }

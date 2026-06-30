@@ -169,7 +169,7 @@ export const http = {
   post: (p, body) => request("POST", p, { body }),
   patch: (p, body) => request("PATCH", p, { body }),
   put: (p, body) => request("PUT", p, { body }),
-  del: (p) => request("DELETE", p),
+  del: (p, body) => request("DELETE", p, { body }),
   form: (p, fd) => request("POST", p, { raw: fd }),
   blob: (p) => requestBlob(p),
 };

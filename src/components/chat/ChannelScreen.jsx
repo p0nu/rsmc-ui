@@ -19,6 +19,24 @@ import Icon from "../common/Icon.jsx";
 
 const TYPING_TTL = 4000;
 
+// Immutably apply a reaction add/remove event to a message's reactions array.
+function applyReaction(msg, f, added) {
+  const reactions = (msg.reactions || []).map((g) => ({ ...g, user_ids: [...g.user_ids] }));
+  const idx = reactions.findIndex((g) => g.emoji === f.emoji);
+  if (added) {
+    if (idx === -1) reactions.push({ emoji: f.emoji, count: 1, user_ids: [f.user_id] });
+    else if (!reactions[idx].user_ids.includes(f.user_id)) {
+      reactions[idx].count += 1;
+      reactions[idx].user_ids.push(f.user_id);
+    }
+  } else if (idx !== -1) {
+    reactions[idx].user_ids = reactions[idx].user_ids.filter((u) => u !== f.user_id);
+    reactions[idx].count = reactions[idx].user_ids.length;
+    if (reactions[idx].count === 0) reactions.splice(idx, 1);
+  }
+  return { ...msg, reactions };
+}
+
 export default function ChannelScreen({ channel, presence, onChannelChanged, onLeft, onToggleSidebar }) {
   const { user } = useAuth();
   const toast = useToast();
@@ -36,6 +54,30 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
   const scrollRef = useRef(null);
   const bottomRef = useRef(null);
   const atBottom = useRef(true);
+  const markReadTimer = useRef(null);
+  // Reply message ids we've already folded into a parent's reply_count, so a
+  // re-delivered event, a reconnect replay, or StrictMode's double-invoked
+  // effects can never inflate the count (the cause of "1 reply" showing as "4").
+  const countedReplyIds = useRef(new Set());
+  // Snapshot of the channel's last_read_at at open time, for the "new messages"
+  // divider (server advances the real cursor once we load history).
+  const openReadAt = useRef(channel.last_read_at ?? null);
+
+  // Debounced "advance my read cursor on the server" for the active channel.
+  // Coalesces bursts of incoming messages into a single request.
+  const markReadSoon = useCallback(() => {
+    if (markReadTimer.current) clearTimeout(markReadTimer.current);
+    markReadTimer.current = setTimeout(() => {
+      api.markChannelRead(channel.id).catch(() => {});
+    }, 400);
+  }, [channel.id]);
+
+  // Cancel any pending mark-read when switching channels/unmounting.
+  useEffect(() => {
+    return () => {
+      if (markReadTimer.current) clearTimeout(markReadTimer.current);
+    };
+  }, [channel.id]);
 
   useSubscription(channel.id);
 
@@ -50,6 +92,10 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
     setCursor(null);
     setThread(null);
     setPanel(null);
+    openReadAt.current = channel.last_read_at ?? null;
+    // History returns the server-authoritative reply_count for every message, so
+    // forget any locally-counted replies from the previous channel view.
+    countedReplyIds.current.clear();
     api
       .history(channel.id, { limit: 50 })
       .then((res) => {
@@ -101,6 +147,12 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
     if (f.channel_id !== channel.id) return;
     const msg = f.message;
     if (msg.parent_id) {
+      // Fold this reply into its parent's count exactly once. Without the guard,
+      // StrictMode's double-registered handler, a WS reconnect, or the sender
+      // also receiving its own event would each add another increment — which
+      // is how a single reply rendered as "4 replies".
+      if (msg.id && countedReplyIds.current.has(msg.id)) return;
+      if (msg.id) countedReplyIds.current.add(msg.id);
       setMessages((m) =>
         m.map((x) => (x.id === msg.parent_id ? { ...x, reply_count: (x.reply_count || 0) + 1 } : x))
       );
@@ -110,6 +162,10 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
     if (atBottom.current || msg.author?.id === user.id) {
       requestAnimationFrame(() => scrollToBottom());
     }
+    // We're looking at this channel, so anything that lands here is already
+    // read. Advance the server read cursor (debounced) so a later channel-list
+    // refresh won't resurrect these as unread.
+    if (msg.author?.id !== user.id) markReadSoon();
   });
   useRealtime("message_updated", (f) => {
     if (f.channel_id !== channel.id) return;
@@ -120,6 +176,14 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
     setMessages((m) =>
       m.map((x) => (x.id === f.message_id ? { ...x, deleted_at: new Date().toISOString(), content: "" } : x))
     );
+  });
+  useRealtime("reaction_added", (f) => {
+    if (f.channel_id !== channel.id) return;
+    setMessages((m) => m.map((x) => (x.id === f.message_id ? applyReaction(x, f, true) : x)));
+  });
+  useRealtime("reaction_removed", (f) => {
+    if (f.channel_id !== channel.id) return;
+    setMessages((m) => m.map((x) => (x.id === f.message_id ? applyReaction(x, f, false) : x)));
   });
   useRealtime("typing", (f) => {
     if (f.channel_id !== channel.id || f.user_id === user.id) return;
@@ -210,6 +274,8 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
                   onOpenThread={openThread}
                   onEdited={onEdited}
                   onDeleted={onDeleted}
+                  lastReadAt={openReadAt.current}
+                  currentUserId={user.id}
                 />
                 <div ref={bottomRef} />
               </>

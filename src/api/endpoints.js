@@ -31,11 +31,14 @@ export const api = {
   getChannel: (id) => http.get(`/channels/${id}`),
   updateChannel: (id, payload) => http.patch(`/channels/${id}`, payload),
   listMembers: (id) => http.get(`/channels/${id}/members`),
+  markChannelRead: (id) => http.post(`/channels/${id}/read`),
   addMember: (id, user_id) => http.post(`/channels/${id}/members`, { user_id }),
   removeMember: (id, user_id) => http.del(`/channels/${id}/members/${user_id}`),
 
   // ---- messages ----
   sendMessage: (channelId, payload) => http.post(`/channels/${channelId}/messages`, payload),
+  addReaction: (messageId, emoji) => http.post(`/messages/${messageId}/reactions`, { emoji }),
+  removeReaction: (messageId, emoji) => http.del(`/messages/${messageId}/reactions`, { emoji }),
   history: (channelId, { limit = 50, before, after } = {}) => {
     const p = new URLSearchParams({ limit: String(limit) });
     if (before) p.set("before", before);

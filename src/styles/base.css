@@ -474,7 +474,7 @@ code,
   display: flex;
   gap: 11px;
   align-items: flex-start;
-  background: var(--ink);
+  background: #23222e;
   color: #fff;
   padding: 13px 15px;
   border-radius: var(--r-md);

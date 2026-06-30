@@ -19,6 +19,21 @@ export default function Message({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
   const [busy, setBusy] = useState(false);
+  const [picker, setPicker] = useState(false);
+
+  const QUICK_EMOJI = ["👍", "❤️", "😂", "🎉", "👀", "✅"];
+
+  async function toggleReaction(emoji) {
+    setPicker(false);
+    const group = (message.reactions || []).find((g) => g.emoji === emoji);
+    const mineAlready = group?.user_ids?.includes(user.id);
+    try {
+      if (mineAlready) await api.removeReaction(message.id, emoji);
+      else await api.addReaction(message.id, emoji);
+    } catch {
+      /* realtime event drives UI; ignore */
+    }
+  }
 
   const author = message.author;
   const mine = author?.id === user.id;
@@ -122,10 +137,45 @@ export default function Message({
             <span className="msg-replies-go">View thread</span>
           </button>
         )}
+        {!deleted && message.reactions?.length > 0 && (
+          <div className="msg-reactions">
+            {message.reactions.map((g) => {
+              const mineReacted = g.user_ids?.includes(user.id);
+              return (
+                <button
+                  key={g.emoji}
+                  className={`reaction-chip ${mineReacted ? "mine" : ""}`}
+                  onClick={() => toggleReaction(g.emoji)}
+                  title={mineReacted ? "Remove your reaction" : "React"}
+                >
+                  <span className="reaction-emoji">{g.emoji}</span>
+                  <span className="reaction-count">{g.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {!deleted && !editing && (
         <div className="msg-tools">
+          <div className="msg-react-wrap">
+            <button className="msg-tool" title="Add reaction" onClick={() => setPicker((v) => !v)}>
+              <Icon name="smile" size={16} />
+            </button>
+            {picker && (
+              <>
+                <div className="msg-react-backdrop" onClick={() => setPicker(false)} />
+                <div className="msg-react-picker" role="menu">
+                  {QUICK_EMOJI.map((e) => (
+                    <button key={e} className="msg-react-opt" onClick={() => toggleReaction(e)} title={e}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <button className="msg-tool" title="Reply in thread" onClick={() => onOpenThread?.(message)}>
             <Icon name="thread" size={16} />
           </button>
