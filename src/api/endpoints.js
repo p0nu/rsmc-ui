@@ -32,6 +32,7 @@ export const api = {
   updateChannel: (id, payload) => http.patch(`/channels/${id}`, payload),
   listMembers: (id) => http.get(`/channels/${id}/members`),
   markChannelRead: (id) => http.post(`/channels/${id}/read`),
+  channelReceipts: (id) => http.get(`/channels/${id}/receipts`),
   addMember: (id, user_id) => http.post(`/channels/${id}/members`, { user_id }),
   removeMember: (id, user_id) => http.del(`/channels/${id}/members/${user_id}`),
 
@@ -63,7 +64,6 @@ export const api = {
   // ---- notifications ----
   notifications: (unreadOnly = false, limit = 60) =>
     http.get(`/notifications?unread_only=${unreadOnly}&limit=${limit}`),
-  unreadCount: () => http.get("/notifications/unread_count"), // -> { unread: N }
   markRead: (id) => http.post(`/notifications/${id}/read`),
   markAllRead: () => http.post("/notifications/read_all"),
 

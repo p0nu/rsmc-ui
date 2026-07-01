@@ -47,6 +47,7 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [typing, setTyping] = useState({});
+  const [receipts, setReceipts] = useState({}); // user_id -> last_read_at (ms epoch)
   const [panel, setPanel] = useState(null); // 'members' | 'files' | null
   const [thread, setThread] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -96,6 +97,17 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
     // History returns the server-authoritative reply_count for every message, so
     // forget any locally-counted replies from the previous channel view.
     countedReplyIds.current.clear();
+    // Load who has read up to where, for the "Seen" / "Seen by N" indicators.
+    setReceipts({});
+    api
+      .channelReceipts(channel.id)
+      .then((rows) => {
+        if (!live) return;
+        const next = {};
+        for (const r of rows) next[r.user_id] = new Date(r.last_read_at).getTime();
+        setReceipts(next);
+      })
+      .catch(() => {});
     api
       .history(channel.id, { limit: 50 })
       .then((res) => {
@@ -189,6 +201,11 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
     if (f.channel_id !== channel.id || f.user_id === user.id) return;
     setTyping((t) => ({ ...t, [f.user_id]: Date.now() + TYPING_TTL }));
   });
+  useRealtime("read", (f) => {
+    if (f.channel_id !== channel.id) return;
+    const ts = new Date(f.last_read_at).getTime();
+    setReceipts((r) => (r[f.user_id] >= ts ? r : { ...r, [f.user_id]: ts }));
+  });
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -230,6 +247,20 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
   const typingUsers = Object.keys(typing)
     .map((id) => members.members.find((m) => m.id === id))
     .filter(Boolean);
+
+  // Read receipt for my most recent (non-deleted) message: which other members
+  // have read up to or past it. Shown as "Seen" (DM) or "Seen by N" (channel).
+  const seen = (() => {
+    const mine = [...messages].reverse().find((m) => m.user_id === user.id && !m.deleted_at);
+    if (!mine) return null;
+    const at = new Date(mine.created_at).getTime();
+    const readers = Object.entries(receipts)
+      .filter(([uid, ts]) => uid !== user.id && ts >= at)
+      .map(([uid]) => members.members.find((m) => m.id === uid))
+      .filter(Boolean);
+    if (readers.length === 0) return null;
+    return { messageId: mine.id, readers, isDirect };
+  })();
 
   // guests cannot create channels but CAN send messages; posting requires
   // membership. While the member roster is still loading, don't prematurely
@@ -277,6 +308,7 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
                   lastReadAt={openReadAt.current}
                   currentUserId={user.id}
                 />
+                {seen && <SeenIndicator seen={seen} />}
                 <div ref={bottomRef} />
               </>
             )}
@@ -374,6 +406,21 @@ function TypingIndicator({ users }) {
     <div className="typing-row active">
       <span className="typing-dots"><i /><i /><i /></span>
       <span>{label}…</span>
+    </div>
+  );
+}
+
+// "Seen" (DM) or "Seen by N" (channel), shown under the sender's last message.
+// The names are exposed via title for a hover tooltip.
+function SeenIndicator({ seen }) {
+  const names = seen.readers.map((u) => displayName(u));
+  const label = seen.isDirect
+    ? "Seen"
+    : `Seen by ${names.length}`;
+  return (
+    <div className="seen-row" title={names.join(", ")}>
+      <Icon name="check" size={12} />
+      <span>{label}</span>
     </div>
   );
 }

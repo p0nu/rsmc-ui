@@ -939,6 +939,21 @@
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
+/* Read receipt ("Seen" / "Seen by N") under the sender's last message. */
+.seen-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 2px 20px 4px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: default;
+  user-select: none;
+}
+.seen-row svg { color: var(--brand-400); }
+
 /* =========================================================================
    Composer
    ========================================================================= */
