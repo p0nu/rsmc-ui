@@ -8,6 +8,8 @@ export default function ChannelHeader({
   activePanel,
   onToggleMembers,
   onToggleFiles,
+  onTogglePins,
+  onSearch,
   onOpenSettings,
   onToggleSidebar,
 }) {
@@ -40,6 +42,20 @@ export default function ChannelHeader({
       </div>
 
       <div className="channel-header-actions">
+        <button
+          className="btn btn-ghost btn-icon btn-sm"
+          onClick={onSearch}
+          title="Search messages"
+        >
+          <Icon name="search" size={17} />
+        </button>
+        <button
+          className={`btn btn-ghost btn-icon btn-sm ${activePanel === "pins" ? "active" : ""}`}
+          onClick={onTogglePins}
+          title="Pinned messages"
+        >
+          <Icon name="pin" size={17} />
+        </button>
         {!isDirect && (
           <button
             className={`btn btn-ghost btn-sm channel-header-members ${activePanel === "members" ? "active" : ""}`}

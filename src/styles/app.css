@@ -627,6 +627,113 @@
   color: var(--ink-4);
   margin-left: 4px;
 }
+
+/* Pinned indicator on a message */
+.msg-pinned {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brand-400);
+  margin-left: 6px;
+}
+
+/* Broadcast mention entry in the composer autocomplete */
+.mention-opt.is-broadcast .mention-opt-name {
+  color: var(--brand-400);
+  font-weight: 700;
+}
+
+/* Pins panel list */
+.pins-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pin-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+.pin-card-main {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.pin-card-meta {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+.pin-card-text {
+  display: block;
+  color: var(--ink-1);
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Search modal */
+.search-scope {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0;
+}
+.chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chip.active {
+  background: var(--brand-soft);
+  border-color: var(--brand-400);
+  color: var(--brand-400);
+}
+.search-results {
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.search-hit {
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+}
+.search-hit:hover {
+  background: var(--surface-2);
+}
+.search-hit-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.search-hit-author {
+  font-weight: 600;
+  font-size: 13px;
+}
+.search-hit-text {
+  color: var(--ink-1);
+  font-size: 13.5px;
+}
 .mention {
   background: var(--brand-soft);
   color: var(--brand);

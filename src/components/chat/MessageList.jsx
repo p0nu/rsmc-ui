@@ -1,7 +1,7 @@
 import Message from "./Message.jsx";
 import { dayLabel } from "../../lib/format.js";
 
-export default function MessageList({ messages, presence, canModerate, onOpenThread, onEdited, onDeleted, lastReadAt, currentUserId }) {
+export default function MessageList({ messages, presence, canModerate, onOpenThread, onEdited, onDeleted, onPinChanged, lastReadAt, currentUserId }) {
   const rows = [];
   let lastDay = null;
   let lastAuthor = null;
@@ -43,6 +43,7 @@ export default function MessageList({ messages, presence, canModerate, onOpenThr
         onOpenThread={onOpenThread}
         onEdited={onEdited}
         onDeleted={onDeleted}
+        onPinChanged={onPinChanged}
       />
     );
     lastAuthor = m.author?.id;

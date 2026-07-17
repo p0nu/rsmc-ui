@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0] — search, pins, broadcast mentions
+
+### Added
+- **Message search** — a search dialog (opened from the channel header) runs
+  full-text search over messages, scoped to the current conversation or across
+  all channels, with debounced typeahead results.
+- **Pinned messages** — a pin action on each message, a "Pinned" marker on
+  pinned messages, and a **Pins panel** (channel header) listing a channel's
+  pinned messages with jump-to and unpin. Updates live via the message-updated
+  event.
+- **Broadcast mentions** — `@channel`, `@here`, and `@everyone` now appear in
+  the composer's mention autocomplete, styled distinctly from user mentions.
+
+### Notes
+- Requires the matching `rsmc-engine` v0.4.0 for the search, pins, and broadcast
+  endpoints/behavior.
+
 ## [0.3.0] — read-receipt indicators
 
 ### Added

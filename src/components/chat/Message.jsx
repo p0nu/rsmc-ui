@@ -14,6 +14,7 @@ export default function Message({
   onOpenThread,
   onEdited,
   onDeleted,
+  onPinChanged,
 }) {
   const { user } = useAuth();
   const [editing, setEditing] = useState(false);
@@ -40,6 +41,18 @@ export default function Message({
   const deleted = !!message.deleted_at;
   const online = author ? presence[author.id]?.online : undefined;
   const canDelete = mine || canModerate;
+  const pinned = !!message.pinned_at;
+
+  async function togglePin() {
+    try {
+      const updated = pinned
+        ? await api.unpinMessage(message.id)
+        : await api.pinMessage(message.id);
+      onPinChanged?.(updated);
+    } catch {
+      /* realtime MessageUpdated event also refreshes state; ignore */
+    }
+  }
 
   async function saveEdit() {
     const next = draft.trim();
@@ -80,6 +93,9 @@ export default function Message({
             {author?.role === "admin" && <span className="badge badge-admin">Admin</span>}
             <span className="msg-time">{clockTime(message.created_at)}</span>
             {message.edited_at && !deleted && <span className="msg-edited">edited</span>}
+            {pinned && !deleted && (
+              <span className="msg-pinned" title="Pinned"><Icon name="pin" size={12} /> Pinned</span>
+            )}
           </div>
         )}
 
@@ -184,6 +200,13 @@ export default function Message({
               <Icon name="edit" size={16} />
             </button>
           )}
+          <button
+            className={`msg-tool ${pinned ? "active" : ""}`}
+            title={pinned ? "Unpin" : "Pin to channel"}
+            onClick={togglePin}
+          >
+            <Icon name="pin" size={16} />
+          </button>
           {canDelete && (
             <button className="msg-tool danger" title="Delete" onClick={remove}>
               <Icon name="trash" size={16} />

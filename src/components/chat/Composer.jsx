@@ -30,16 +30,28 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
     return { query: m[1], start: caret - m[1].length - 1 };
   }, []);
 
+  // Broadcast mentions that notify the whole channel. Surfaced alongside user
+  // results in the autocomplete when they prefix-match the query.
+  const BROADCAST_MENTIONS = [
+    { username: "channel", broadcast: true, display_name: "Notify everyone in this channel" },
+    { username: "here", broadcast: true, display_name: "Notify active members" },
+    { username: "everyone", broadcast: true, display_name: "Notify everyone in this channel" },
+  ];
+
   // Debounced user lookup when a mention is active.
   const runMentionSearch = useCallback((query) => {
     if (mentionTimer.current) clearTimeout(mentionTimer.current);
+    const q = query.toLowerCase();
+    const broadcasts = BROADCAST_MENTIONS.filter((b) => b.username.startsWith(q));
     mentionTimer.current = setTimeout(async () => {
       try {
         const users = await api.listUsers(query, 6);
-        setMentionResults(Array.isArray(users) ? users : []);
+        const list = Array.isArray(users) ? users : [];
+        // Broadcast options first, then matching users.
+        setMentionResults([...broadcasts, ...list]);
         setMentionIdx(0);
       } catch {
-        setMentionResults([]);
+        setMentionResults(broadcasts);
       }
     }, 150);
   }, []);
@@ -194,8 +206,8 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
           <div className="mention-pop" role="listbox">
             {mentionResults.map((u, i) => (
               <button
-                key={u.id}
-                className={`mention-opt ${i === mentionIdx ? "active" : ""}`}
+                key={u.broadcast ? `bc:${u.username}` : u.id}
+                className={`mention-opt ${i === mentionIdx ? "active" : ""} ${u.broadcast ? "is-broadcast" : ""}`}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   applyMention(u);
@@ -203,8 +215,12 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
                 role="option"
                 aria-selected={i === mentionIdx}
               >
-                <span className="mention-opt-name">{u.display_name || u.username}</span>
-                <span className="mention-opt-handle">@{u.username}</span>
+                <span className="mention-opt-name">
+                  {u.broadcast ? `@${u.username}` : (u.display_name || u.username)}
+                </span>
+                <span className="mention-opt-handle">
+                  {u.broadcast ? u.display_name : `@${u.username}`}
+                </span>
               </button>
             ))}
           </div>

@@ -49,6 +49,14 @@ export const api = {
   thread: (messageId) => http.get(`/messages/${messageId}/thread`),
   editMessage: (messageId, content) => http.patch(`/messages/${messageId}`, { content }),
   deleteMessage: (messageId) => http.del(`/messages/${messageId}`),
+  pinMessage: (messageId) => http.post(`/messages/${messageId}/pin`),
+  unpinMessage: (messageId) => http.del(`/messages/${messageId}/pin`),
+  channelPins: (channelId) => http.get(`/channels/${channelId}/pins`),
+  search: (q, { channelId, limit = 30 } = {}) => {
+    const p = new URLSearchParams({ q, limit: String(limit) });
+    if (channelId) p.set("channel_id", channelId);
+    return http.get(`/search?${p}`);
+  },
 
   // ---- files ----
   uploadFile: (file) => {

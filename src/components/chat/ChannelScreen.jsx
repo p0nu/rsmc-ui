@@ -12,8 +12,10 @@ import Composer from "./Composer.jsx";
 import ThreadPanel from "./ThreadPanel.jsx";
 import MembersPanel from "./MembersPanel.jsx";
 import FilesPanel from "./FilesPanel.jsx";
+import PinsPanel from "./PinsPanel.jsx";
 import ChannelHeader from "./ChannelHeader.jsx";
 import ChannelSettingsModal from "../modals/ChannelSettingsModal.jsx";
+import SearchModal from "../modals/SearchModal.jsx";
 import { Loading } from "../common/Modal.jsx";
 import Icon from "../common/Icon.jsx";
 
@@ -51,6 +53,7 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
   const [panel, setPanel] = useState(null); // 'members' | 'files' | null
   const [thread, setThread] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const scrollRef = useRef(null);
   const bottomRef = useRef(null);
@@ -234,6 +237,9 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
     (id) => setMessages((m) => m.map((x) => (x.id === id ? { ...x, deleted_at: new Date().toISOString(), content: "" } : x))),
     []
   );
+  // Pin/unpin returns the updated message; replace it in place. The realtime
+  // MessageUpdated event keeps other clients in sync.
+  const onPinChanged = useCallback((u) => setMessages((m) => m.map((x) => (x.id === u.id ? u : x))), []);
 
   function togglePanel(name) {
     setPanel((p) => (p === name ? null : name));
@@ -278,6 +284,8 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
         activePanel={panel}
         onToggleMembers={() => togglePanel("members")}
         onToggleFiles={() => togglePanel("files")}
+        onTogglePins={() => togglePanel("pins")}
+        onSearch={() => setShowSearch(true)}
         onOpenSettings={() => setShowSettings(true)}
         onToggleSidebar={onToggleSidebar}
       />
@@ -305,6 +313,7 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
                   onOpenThread={openThread}
                   onEdited={onEdited}
                   onDeleted={onDeleted}
+                  onPinChanged={onPinChanged}
                   lastReadAt={openReadAt.current}
                   currentUserId={user.id}
                 />
@@ -342,6 +351,13 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
         {panel === "files" && (
           <FilesPanel channel={channel} onClose={() => setPanel(null)} />
         )}
+        {panel === "pins" && (
+          <PinsPanel
+            channel={channel}
+            onClose={() => setPanel(null)}
+            onJump={() => setPanel(null)}
+          />
+        )}
         {thread && (
           <ThreadPanel
             channel={channel}
@@ -367,6 +383,12 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
             setShowSettings(false);
             onLeft?.();
           }}
+        />
+      )}
+      {showSearch && (
+        <SearchModal
+          channel={channel}
+          onClose={() => setShowSearch(false)}
         />
       )}
     </div>
