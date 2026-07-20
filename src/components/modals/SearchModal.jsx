@@ -6,7 +6,7 @@ import Icon from "../common/Icon.jsx";
 
 // Full-text message search. Scope toggles between the current channel and every
 // channel the user belongs to. Results are debounced as you type.
-export default function SearchModal({ channel, onClose }) {
+export default function SearchModal({ channel, onClose, onJump }) {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("channel"); // 'channel' | 'all'
   const [results, setResults] = useState([]);
@@ -83,7 +83,16 @@ export default function SearchModal({ channel, onClose }) {
           />
         ) : (
           results.map((m) => (
-            <div key={m.id} className="search-hit">
+            <button
+              key={m.id}
+              type="button"
+              className="search-hit"
+              title="Jump to message"
+              onClick={() => {
+                onJump?.(m);
+                onClose();
+              }}
+            >
               <div className="search-hit-meta">
                 <span className="search-hit-author">{displayName(m.author)}</span>
                 <span className="muted">
@@ -91,7 +100,7 @@ export default function SearchModal({ channel, onClose }) {
                 </span>
               </div>
               <div className="search-hit-text">{m.content}</div>
-            </div>
+            </button>
           ))
         )}
       </div>

@@ -33,6 +33,7 @@ export const api = {
   listMembers: (id) => http.get(`/channels/${id}/members`),
   markChannelRead: (id) => http.post(`/channels/${id}/read`),
   channelReceipts: (id) => http.get(`/channels/${id}/receipts`),
+  setChannelMute: (id, muted) => http.patch(`/channels/${id}/mute`, { muted }),
   addMember: (id, user_id) => http.post(`/channels/${id}/members`, { user_id }),
   removeMember: (id, user_id) => http.del(`/channels/${id}/members/${user_id}`),
 

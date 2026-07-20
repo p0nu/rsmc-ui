@@ -39,7 +39,7 @@ function applyReaction(msg, f, added) {
   return { ...msg, reactions };
 }
 
-export default function ChannelScreen({ channel, presence, onChannelChanged, onLeft, onToggleSidebar }) {
+export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHandled, onJumpToMessage, onChannelChanged, onLeft, onToggleSidebar }) {
   const { user } = useAuth();
   const toast = useToast();
   const members = useChannelMembers(channel);
@@ -156,6 +156,37 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
       setLoadingMore(false);
     }
   }
+
+  // Jump to a message from search: scroll+flash if already loaded, page back
+  // through history if not, or open the thread panel for a reply hit.
+  useEffect(() => {
+    if (!jumpTarget || jumpTarget.channel_id !== channel.id || loading) return;
+
+    if (jumpTarget.parent_id) {
+      const root = messages.find((m) => m.id === jumpTarget.parent_id);
+      if (root) {
+        openThread(root);
+        onJumpHandled?.();
+      } else if (cursor && !loadingMore) {
+        loadOlder();
+      } else if (!cursor) {
+        onJumpHandled?.(); // root not found anywhere in history; give up quietly
+      }
+      return;
+    }
+
+    const el = document.getElementById(`msg-${jumpTarget.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("msg-flash");
+      setTimeout(() => el.classList.remove("msg-flash"), 1800);
+      onJumpHandled?.();
+    } else if (cursor && !loadingMore) {
+      loadOlder();
+    } else if (!cursor) {
+      onJumpHandled?.();
+    }
+  }, [jumpTarget, messages, loading, cursor, loadingMore]);
 
   // ---- realtime ----
   useRealtime("message_created", (f) => {
@@ -355,7 +386,10 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
           <PinsPanel
             channel={channel}
             onClose={() => setPanel(null)}
-            onJump={() => setPanel(null)}
+            onJump={(m) => {
+              setPanel(null);
+              onJumpToMessage?.(m);
+            }}
           />
         )}
         {thread && (
@@ -389,6 +423,7 @@ export default function ChannelScreen({ channel, presence, onChannelChanged, onL
         <SearchModal
           channel={channel}
           onClose={() => setShowSearch(false)}
+          onJump={onJumpToMessage}
         />
       )}
     </div>

@@ -77,7 +77,7 @@ export default function Message({
   }
 
   return (
-    <div className={`msg ${grouped ? "is-grouped" : ""} ${deleted ? "is-deleted" : ""}`}>
+    <div id={`msg-${message.id}`} className={`msg ${grouped ? "is-grouped" : ""} ${deleted ? "is-deleted" : ""}`}>
       <div className="msg-rail">
         {grouped ? (
           <span className="msg-rail-time">{clockTime(message.created_at)}</span>

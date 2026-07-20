@@ -384,6 +384,62 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Muted channels: dimmed row, and a subdued badge that still shows the count
+   but doesn't demand attention the way an active unread badge does. */
+.sidebar-link.is-muted .sidebar-link-name,
+.sidebar-link.is-muted .sidebar-link-glyph {
+  opacity: 0.5;
+}
+.sidebar-unread.is-muted {
+  background: transparent;
+  color: var(--ink-3);
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+/* Mute toggle in channel settings */
+.mute-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink-1);
+  text-align: left;
+  cursor: pointer;
+}
+.mute-toggle:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.mute-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.mute-toggle.is-muted {
+  border-color: var(--brand-400);
+  background: var(--brand-soft);
+}
+.mute-toggle.is-muted svg {
+  color: var(--brand-400);
+}
+.mute-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mute-toggle-title {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.mute-toggle-hint {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
 /* skeleton loaders */
 .skeleton-rows {
   display: flex;
@@ -716,6 +772,12 @@
 .search-hit {
   padding: 8px 10px;
   border-radius: var(--r-sm);
+  border: none;
+  background: none;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  display: block;
 }
 .search-hit:hover {
   background: var(--surface-2);
@@ -740,6 +802,13 @@
   font-weight: 600;
   padding: 0 3px;
   border-radius: var(--r-xs);
+}
+.msg-flash {
+  animation: msgFlash 1.6s ease-out;
+}
+@keyframes msgFlash {
+  0%   { background: var(--brand-soft); }
+  100% { background: transparent; }
 }
 
 /* attachments */

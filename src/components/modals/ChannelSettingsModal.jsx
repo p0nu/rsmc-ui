@@ -12,6 +12,23 @@ export default function ChannelSettingsModal({ channel, canAdminister, onClose, 
   const [name, setName] = useState(channel.name || "");
   const [topic, setTopic] = useState(channel.topic || "");
   const [busy, setBusy] = useState(false);
+  const [muted, setMuted] = useState(!!channel.muted);
+  const [muteBusy, setMuteBusy] = useState(false);
+
+  async function toggleMute() {
+    const next = !muted;
+    setMuteBusy(true);
+    setMuted(next); // optimistic
+    try {
+      await api.setChannelMute(channel.id, next);
+      onUpdated?.();
+    } catch (e) {
+      setMuted(!next); // revert
+      toast.error("Couldn't update notifications", e.message);
+    } finally {
+      setMuteBusy(false);
+    }
+  }
 
   async function save(e) {
     e.preventDefault();
@@ -65,6 +82,28 @@ export default function ChannelSettingsModal({ channel, canAdminister, onClose, 
             onChange={(e) => setTopic(e.target.value)}
             style={{ minHeight: 70 }}
           />
+        </div>
+
+        <div className="field">
+          <label className="field-label">Notifications</label>
+          <button
+            type="button"
+            className={`mute-toggle ${muted ? "is-muted" : ""}`}
+            onClick={toggleMute}
+            disabled={muteBusy}
+          >
+            <Icon name={muted ? "bell-off" : "bell"} size={16} />
+            <span className="mute-toggle-text">
+              <span className="mute-toggle-title">
+                {muted ? "Muted" : "Mute this channel"}
+              </span>
+              <span className="mute-toggle-hint">
+                {muted
+                  ? "No notifications. Unread still counts, shown dimmed."
+                  : "Silence all notifications, including @channel."}
+              </span>
+            </span>
+          </button>
         </div>
 
         {!canAdminister && (

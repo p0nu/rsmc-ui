@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0] - jump to message, channel mute
+
+### Added
+- **Jump to message** - clicking a search result or a pinned message now
+  scrolls to that message in the conversation and briefly highlights it. If the
+  message lives in a different channel, that channel opens first; if it's a
+  thread reply, the thread panel opens instead. Older messages outside the
+  loaded window are paged in automatically.
+- **Mute channel** - a notifications toggle in channel settings silences a
+  channel completely, including `@channel` broadcasts. Muted channels are
+  dimmed in the sidebar, their unread badge is shown in a subdued style, and
+  they no longer contribute to the Chat button's total count.
+
+### Notes
+- Requires the matching `rsmc-engine` v0.5.0 for the mute endpoint and the
+  `muted` flag in the channel list.
+
 ## [0.4.0] — search, pins, broadcast mentions
 
 ### Added

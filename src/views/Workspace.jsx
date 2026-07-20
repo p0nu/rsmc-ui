@@ -28,6 +28,7 @@ export default function Workspace() {
   const [presence, setPresence] = useState({});
   const [modal, setModal] = useState(null); // 'create' | 'direct' | 'browse' | 'profile'
   const [mobileSidebar, setMobileSidebar] = useState(false);
+  const [jumpTarget, setJumpTarget] = useState(null); // { id, channel_id, parent_id? } | null
   const { links: appLinks, reload: reloadAppLinks } = useAppLinks();
 
   // Tracks message ids we've already accounted for in unread badges, so a
@@ -49,6 +50,9 @@ export default function Workspace() {
     let total = 0;
     for (const c of channels) {
       if (view === "chat" && c.id === activeId) continue;
+      // Muted channels still show their own dimmed badge, but deliberately
+      // don't contribute to the global Chat count.
+      if (c.muted) continue;
       total += c.unread_count || 0;
     }
     return total;
@@ -156,6 +160,10 @@ export default function Workspace() {
       if (n.id) api.markRead(n.id).catch(() => {});
       return;
     }
+    // Muted channels shouldn't surface toasts. The server already withholds
+    // notifications for muted members; this guards against any that slip
+    // through (e.g. muted in another tab moments earlier).
+    if (chId && channels.some((c) => c.id === chId && c.muted)) return;
     const kindLabel = {
       mention: "New mention",
       direct_message: "New direct message",
@@ -237,6 +245,13 @@ export default function Workspace() {
     clearChannelNotifications(id);
   }
 
+  function jumpToMessage(msg) {
+    if (msg.channel_id !== activeId || view !== "chat") {
+      openChannel(msg.channel_id);
+    }
+    setJumpTarget(msg);
+  }
+
   async function afterCreateChannel(ch) {
     setModal(null);
     await reload();
@@ -281,6 +296,9 @@ export default function Workspace() {
             key={active.id}
             channel={active}
             presence={presence}
+            jumpTarget={jumpTarget}
+            onJumpHandled={() => setJumpTarget(null)}
+            onJumpToMessage={jumpToMessage}
             onChannelChanged={reload}
             onLeft={() => {
               setActiveId(null);

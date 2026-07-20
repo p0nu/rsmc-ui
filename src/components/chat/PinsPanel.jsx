@@ -64,7 +64,7 @@ export default function PinsPanel({ channel, onClose, onJump }) {
           <div className="pins-list">
             {pins.map((m) => (
               <div key={m.id} className="pin-card">
-                <button type="button" className="pin-card-main" onClick={() => onJump?.(m)}>
+                <button type="button" className="pin-card-main" title="Jump to message" onClick={() => onJump?.(m)}>
                   <span className="pin-card-meta">
                     {displayName(m.author)} · {clockTime(m.created_at)}
                   </span>
