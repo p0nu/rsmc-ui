@@ -87,6 +87,7 @@ export const api = {
 
   // ---- system (admin) ----
   systemInfo: () => http.get("/system/info"),
+  systemStats: () => http.get("/system/stats"),
   listBackups: () => http.get("/system/backups"),
   backupDatabase: (path) => http.post("/system/backup", path ? { path } : {}),
   restoreDatabase: (path) => http.post("/system/restore", { path, confirm: true }),

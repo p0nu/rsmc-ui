@@ -71,6 +71,77 @@ export default function AdminMembers() {
     }
   }
 
+  const renderRow = (u) => (
+    <div key={u.id} className="admin-row">
+      <div className="admin-cell admin-cell-user">
+        <Avatar user={u} size={36} />
+        <div className="admin-user-meta">
+          <div className="admin-user-name">
+            {displayName(u)}
+            {u.id === user.id && <span className="member-you">you</span>}
+          </div>
+          <div className="admin-user-handle">@{u.username} · {u.email}</div>
+        </div>
+      </div>
+      <div className="admin-cell">
+        {u.is_active ? (
+          <span className="badge badge-success">Active</span>
+        ) : (
+          <span className="badge badge-danger">Deactivated</span>
+        )}
+      </div>
+      <div className="admin-cell muted">{timeAgo(u.created_at)}</div>
+      <div className="admin-cell">
+        <select
+          className="select admin-role-select"
+          value={u.role}
+          disabled={busyId === u.id || u.id === user.id}
+          title={u.id === user.id ? "You can't change your own role" : undefined}
+          onChange={(e) => changeRole(u, e.target.value)}
+        >
+          {SYSTEM_ROLES.map((r) => (
+            <option key={r} value={r}>{roleLabel(r)}</option>
+          ))}
+        </select>
+      </div>
+      <div className="admin-cell admin-cell-actions">
+        {u.id !== user.id &&
+          (u.is_active ? (
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={() => setActive(u, false)}
+              disabled={busyId === u.id}
+            >
+              Deactivate
+            </button>
+          ) : (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setActive(u, true)}
+              disabled={busyId === u.id}
+            >
+              Reactivate
+            </button>
+          ))}
+      </div>
+    </div>
+  );
+
+  const tableHead = (
+    <div className="admin-table-head">
+      <span>Member</span>
+      <span>Status</span>
+      <span>Joined</span>
+      <span>Role</span>
+      <span />
+    </div>
+  );
+
+  // Split by system role: admins first, then everyone else. Both keep the same
+  // ordering the API returned within each group.
+  const admins = users.filter((u) => u.role === "admin");
+  const members = users.filter((u) => u.role !== "admin");
+
   return (
     <div className="admin-panel">
       <div className="admin-toolbar">
@@ -89,71 +160,34 @@ export default function AdminMembers() {
 
       {loading ? (
         <Loading />
+      ) : users.length === 0 ? (
+        <p className="muted" style={{ padding: "12px 4px" }}>No members match your search.</p>
       ) : (
-        <div className="admin-table">
-          <div className="admin-table-head">
-            <span>Member</span>
-            <span>Status</span>
-            <span>Joined</span>
-            <span>Role</span>
-            <span />
-          </div>
-          {users.map((u) => (
-            <div key={u.id} className="admin-row">
-              <div className="admin-cell admin-cell-user">
-                <Avatar user={u} size={36} />
-                <div className="admin-user-meta">
-                  <div className="admin-user-name">
-                    {displayName(u)}
-                    {u.id === user.id && <span className="member-you">you</span>}
-                  </div>
-                  <div className="admin-user-handle">@{u.username} · {u.email}</div>
-                </div>
+        <>
+          {admins.length > 0 && (
+            <section className="admin-group">
+              <h3 className="admin-group-title">
+                Admins <span className="admin-group-count">{admins.length}</span>
+              </h3>
+              <div className="admin-table">
+                {tableHead}
+                {admins.map(renderRow)}
               </div>
-              <div className="admin-cell">
-                {u.is_active ? (
-                  <span className="badge badge-success">Active</span>
-                ) : (
-                  <span className="badge badge-danger">Deactivated</span>
-                )}
+            </section>
+          )}
+
+          {members.length > 0 && (
+            <section className="admin-group">
+              <h3 className="admin-group-title">
+                Members <span className="admin-group-count">{members.length}</span>
+              </h3>
+              <div className="admin-table">
+                {tableHead}
+                {members.map(renderRow)}
               </div>
-              <div className="admin-cell muted">{timeAgo(u.created_at)}</div>
-              <div className="admin-cell">
-                <select
-                  className="select admin-role-select"
-                  value={u.role}
-                  disabled={busyId === u.id || u.id === user.id}
-                  title={u.id === user.id ? "You can't change your own role" : undefined}
-                  onChange={(e) => changeRole(u, e.target.value)}
-                >
-                  {SYSTEM_ROLES.map((r) => (
-                    <option key={r} value={r}>{roleLabel(r)}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="admin-cell admin-cell-actions">
-                {u.id !== user.id &&
-                  (u.is_active ? (
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => setActive(u, false)}
-                      disabled={busyId === u.id}
-                    >
-                      Deactivate
-                    </button>
-                  ) : (
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => setActive(u, true)}
-                      disabled={busyId === u.id}
-                    >
-                      Reactivate
-                    </button>
-                  ))}
-              </div>
-            </div>
-          ))}
-        </div>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

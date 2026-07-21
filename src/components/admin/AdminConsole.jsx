@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { isAdmin } from "../../lib/permissions.js";
+import AdminOverview from "./AdminOverview.jsx";
 import AdminMembers from "./AdminMembers.jsx";
-import AdminWebhooks from "./AdminWebhooks.jsx";
-import AdminSystem from "./AdminSystem.jsx";
-import AdminAppLinks from "./AdminAppLinks.jsx";
+import AdminBackup from "./AdminBackup.jsx";
+import AdminIntegrations from "./AdminIntegrations.jsx";
 import { EmptyState } from "../common/Modal.jsx";
 import Icon from "../common/Icon.jsx";
 
 export default function AdminConsole({ onAppLinksChanged }) {
   const { user } = useAuth();
-  const [tab, setTab] = useState("members");
+  const [tab, setTab] = useState("overview");
 
   if (!isAdmin(user)) {
     return (
@@ -31,30 +31,36 @@ export default function AdminConsole({ onAppLinksChanged }) {
       <header className="admin-header">
         <div>
           <h1 className="admin-title">Admin console</h1>
-          <p className="muted">Manage members, roles, and integrations for your workspace.</p>
+          <p className="muted">
+            Monitor the deployment, manage members, protect your data, and connect
+            other systems.
+          </p>
         </div>
       </header>
 
       <div className="admin-tabs">
+        <button className={tab === "overview" ? "active" : ""} onClick={() => setTab("overview")}>
+          <Icon name="grid" size={17} /> Overview
+        </button>
         <button className={tab === "members" ? "active" : ""} onClick={() => setTab("members")}>
-          <Icon name="users" size={17} /> Members & roles
+          <Icon name="users" size={17} /> Members &amp; roles
         </button>
-        <button className={tab === "webhooks" ? "active" : ""} onClick={() => setTab("webhooks")}>
+        <button className={tab === "backup" ? "active" : ""} onClick={() => setTab("backup")}>
+          <Icon name="download" size={17} /> Backup &amp; restore
+        </button>
+        <button
+          className={tab === "integrations" ? "active" : ""}
+          onClick={() => setTab("integrations")}
+        >
           <Icon name="webhook" size={17} /> Integrations
-        </button>
-        <button className={tab === "apps" ? "active" : ""} onClick={() => setTab("apps")}>
-          <Icon name="grid" size={17} /> Apps
-        </button>
-        <button className={tab === "system" ? "active" : ""} onClick={() => setTab("system")}>
-          <Icon name="settings" size={17} /> System
         </button>
       </div>
 
       <div className="admin-body">
+        {tab === "overview" && <AdminOverview />}
         {tab === "members" && <AdminMembers />}
-        {tab === "webhooks" && <AdminWebhooks />}
-        {tab === "apps" && <AdminAppLinks onChanged={onAppLinksChanged} />}
-        {tab === "system" && <AdminSystem />}
+        {tab === "backup" && <AdminBackup />}
+        {tab === "integrations" && <AdminIntegrations onAppLinksChanged={onAppLinksChanged} />}
       </div>
     </div>
   );

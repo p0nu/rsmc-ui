@@ -1843,6 +1843,144 @@
 .admin-panel {
   max-width: 960px;
 }
+
+/* Grouped member sections (Admins / Members) */
+.admin-group {
+  margin-bottom: 26px;
+}
+.admin-group:last-child {
+  margin-bottom: 0;
+}
+.admin-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.admin-group-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Sub-tabs inside a top-level admin tab (Integrations) */
+.admin-subtabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 20px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+}
+.admin-subtabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  border-radius: calc(var(--r-sm) - 2px);
+  cursor: pointer;
+}
+.admin-subtabs button:hover {
+  color: var(--ink);
+}
+.admin-subtabs button.active {
+  background: var(--surface);
+  color: var(--brand);
+}
+
+/* Overview headline figures */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.stat-card-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.stat-card-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.stat-card-value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.stat-card-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.stat-card-sub {
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+/* Key/value rows inside overview cards */
+.kv-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.kv-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.kv-row:last-child {
+  border-bottom: none;
+}
+.kv-row dt {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.kv-row dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 .admin-toolbar {
   display: flex;
   align-items: center;

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.6.0] - admin console overview
+
+### Added
+- **Overview tab** in the admin console, now the default landing tab. Headline
+  figures for members, channels, messages, and files, plus detail cards for the
+  workspace breakdown, server build and uptime, online members, and database
+  status. Refreshes automatically while open.
+
+### Changed
+- Admin console restructured to four tabs: **Overview**, **Members & roles**,
+  **Backup & restore**, and **Integrations**.
+- The former **System** tab is renamed **Backup & restore** - what it actually
+  does.
+- **Webhooks** and **Apps** are merged into a single **Integrations** tab with
+  sub-tabs.
+
+### Notes
+- Requires the matching `rsmc-engine` v0.6.0 for the `/system/stats` endpoint.
+
 ## [0.5.0] - jump to message, channel mute
 
 ### Added
