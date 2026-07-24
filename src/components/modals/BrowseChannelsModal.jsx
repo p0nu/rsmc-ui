@@ -1,27 +1,58 @@
-import { useState } from "react";
-import { channelName } from "../../lib/format.js";
-import { Modal, EmptyState } from "../common/Modal.jsx";
+import { useEffect, useState } from "react";
+import { api } from "../../api/endpoints.js";
+import { useToast } from "../../context/ToastContext.jsx";
+import { Modal, EmptyState, Loading } from "../common/Modal.jsx";
 import Icon from "../common/Icon.jsx";
 
-// The engine's channel list endpoint returns only channels the caller belongs
-// to (there's no public directory route), so "browse" lists your channels and
-// offers to create a new one. This keeps behavior honest with the backend and
-// is a clean seam to plug a discovery endpoint into later.
-export default function BrowseChannelsModal({ joined, onClose, onJoined, onCreateNew }) {
+// A real public-channel directory backed by GET /channels/browse. Public
+// channels can be joined in place (POST /channels/:id/join); channels you're
+// already in show an Open action instead.
+export default function BrowseChannelsModal({ onClose, onOpen, onJoined, onCreateNew }) {
+  const toast = useToast();
   const [query, setQuery] = useState("");
-  const channels = joined.filter(
-    (c) => c.channel_type !== "direct" && (c.name || "").toLowerCase().includes(query.toLowerCase())
+  const [channels, setChannels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [joiningId, setJoiningId] = useState(null);
+
+  useEffect(() => {
+    let live = true;
+    api
+      .browseChannels()
+      .then((rows) => {
+        if (live) setChannels(Array.isArray(rows) ? rows : []);
+      })
+      .catch((e) => toast.error("Couldn't load channels", e.message))
+      .finally(() => live && setLoading(false));
+    return () => {
+      live = false;
+    };
+  }, [toast]);
+
+  const filtered = channels.filter((c) =>
+    (c.name || "").toLowerCase().includes(query.toLowerCase())
   );
+
+  async function join(ch) {
+    setJoiningId(ch.id);
+    try {
+      await api.joinChannel(ch.id);
+      onJoined?.(ch);
+    } catch (e) {
+      toast.error("Couldn't join channel", e.message);
+    } finally {
+      setJoiningId(null);
+    }
+  }
 
   return (
     <Modal
-      title="Channels"
-      subtitle="Channels you're a member of. Create a new one to start another conversation."
+      title="Browse channels"
+      subtitle="Public channels in this workspace. Join one to start participating."
       onClose={onClose}
       width={520}
       footer={
         <div className="form-actions" style={{ justifyContent: "space-between" }}>
-          <span className="muted" style={{ fontSize: 13 }}>{channels.length} channels</span>
+          <span className="muted" style={{ fontSize: 13 }}>{filtered.length} channels</span>
           <button className="btn btn-primary" onClick={onCreateNew}>
             <Icon name="plus" size={16} /> Create channel
           </button>
@@ -41,24 +72,43 @@ export default function BrowseChannelsModal({ joined, onClose, onJoined, onCreat
       </div>
 
       <div className="browse-list">
-        {channels.length === 0 ? (
+        {loading ? (
+          <Loading />
+        ) : filtered.length === 0 ? (
           <EmptyState
             icon={<Icon name="hash" size={30} />}
-            title={query ? "No matching channels" : "No channels yet"}
-            hint="Create your first channel to get the conversation started."
+            title={query ? "No matching channels" : "No public channels yet"}
+            hint="Create the first public channel to get the conversation started."
           />
         ) : (
-          channels.map((ch) => (
-            <button key={ch.id} className="browse-row" onClick={() => onJoined(ch)}>
+          filtered.map((ch) => (
+            <div key={ch.id} className="browse-row">
               <span className="browse-glyph">
-                <Icon name={ch.channel_type === "private" ? "lock" : "hash"} size={18} />
+                <Icon name="hash" size={18} />
               </span>
               <span className="browse-meta">
                 <span className="browse-name">{ch.name}</span>
-                {ch.topic && <span className="browse-topic">{ch.topic}</span>}
+                <span className="browse-sub">
+                  <span className="browse-count">
+                    <Icon name="users" size={12} /> {ch.member_count}
+                  </span>
+                  {ch.topic && <span className="browse-topic">{ch.topic}</span>}
+                </span>
               </span>
-              <span className="browse-open">Open</span>
-            </button>
+              {ch.is_member ? (
+                <button className="btn btn-sm" onClick={() => onOpen?.(ch)}>
+                  Open
+                </button>
+              ) : (
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => join(ch)}
+                  disabled={joiningId === ch.id}
+                >
+                  {joiningId === ch.id ? <span className="spinner on-brand" /> : "Join"}
+                </button>
+              )}
+            </div>
           ))
         )}
       </div>

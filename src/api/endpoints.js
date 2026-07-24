@@ -17,6 +17,13 @@ export const api = {
   // screen quickly instead of leaving the app on a loading spinner.
   meBoot: () => http.get("/users/me", { timeoutMs: 8000 }),
   updateMe: (payload) => http.patch("/users/me", payload),
+  setStatus: (payload) => http.put("/users/me/status", payload),
+  uploadAvatar: (file) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return http.form("/users/me/avatar", fd);
+  },
+  deleteAvatar: () => http.del("/users/me/avatar"),
   getUser: (id) => http.get(`/users/${id}`),
   listUsers: (q = "", limit = 100) =>
     http.get(`/users?q=${encodeURIComponent(q)}&limit=${limit}`),
@@ -27,7 +34,12 @@ export const api = {
   // ---- channels ----
   createChannel: (payload) => http.post("/channels", payload),
   createDirect: (user_id) => http.post("/channels/direct", { user_id }),
-  listChannels: () => http.get("/channels"),
+  listChannels: (includeArchived = false) =>
+    http.get(`/channels${includeArchived ? "?include_archived=true" : ""}`),
+  browseChannels: () => http.get("/channels/browse"),
+  joinChannel: (id) => http.post(`/channels/${id}/join`),
+  archiveChannel: (id) => http.post(`/channels/${id}/archive`),
+  unarchiveChannel: (id) => http.post(`/channels/${id}/unarchive`),
   getChannel: (id) => http.get(`/channels/${id}`),
   updateChannel: (id, payload) => http.patch(`/channels/${id}`, payload),
   listMembers: (id) => http.get(`/channels/${id}/members`),
@@ -58,6 +70,17 @@ export const api = {
     if (channelId) p.set("channel_id", channelId);
     return http.get(`/search?${p}`);
   },
+
+  // ---- scheduled messages ----
+  scheduleMessage: (channelId, payload) =>
+    http.post(`/channels/${channelId}/scheduled`, payload),
+  listScheduled: (channelId) => http.get(`/channels/${channelId}/scheduled`),
+  cancelScheduled: (id) => http.del(`/scheduled/${id}`),
+
+  // ---- drafts ----
+  getDraft: (channelId) => http.get(`/channels/${channelId}/draft`),
+  saveDraft: (channelId, content) =>
+    http.put(`/channels/${channelId}/draft`, { content }),
 
   // ---- files ----
   uploadFile: (file) => {

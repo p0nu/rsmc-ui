@@ -18,7 +18,7 @@ import { EmptyState } from "../components/common/Modal.jsx";
 import Icon from "../components/common/Icon.jsx";
 
 export default function Workspace() {
-  const { user, rt } = useAuth();
+  const { user, setUser, rt } = useAuth();
   const toast = useToast();
 
   const [channels, setChannels] = useState([]);
@@ -144,6 +144,39 @@ export default function Workspace() {
   // presence updates
   useRealtime("presence", (f) => {
     setPresence((p) => ({ ...p, [f.user_id]: { online: f.online, last_seen: f.last_seen } }));
+  });
+
+  // A channel was archived/unarchived somewhere — reload so its visibility and
+  // read-only state stay correct in the sidebar and header.
+  useRealtime("channel_archived", () => {
+    reload();
+  });
+
+  // A profile changed (name/avatar): patch our own cached user, and patch any
+  // DM peer so the sidebar/header reflect it without a reload.
+  useRealtime("profile_updated", (f) => {
+    if (f.user_id === user.id) {
+      setUser((u) => (u ? { ...u, display_name: f.display_name, avatar_url: f.avatar_url } : u));
+    }
+    setChannels((cs) =>
+      cs.map((c) =>
+        c.peer?.id === f.user_id
+          ? { ...c, peer: { ...c.peer, display_name: f.display_name, avatar_url: f.avatar_url } }
+          : c
+      )
+    );
+  });
+
+  // A DM peer changed their status: patch the cached peer so status shows in
+  // the sidebar/DM header.
+  useRealtime("status_changed", (f) => {
+    setChannels((cs) =>
+      cs.map((c) =>
+        c.peer?.id === f.user_id
+          ? { ...c, peer: { ...c.peer, status_emoji: f.emoji, status_text: f.text } }
+          : c
+      )
+    );
   });
 
   // Notifications drive the toast + discovery of brand-new DMs/channels ONLY.
@@ -335,8 +368,11 @@ export default function Workspace() {
       )}
       {modal === "browse" && (
         <BrowseChannelsModal
-          joined={channels}
           onClose={() => setModal(null)}
+          onOpen={(ch) => {
+            setModal(null);
+            openChannel(ch.id);
+          }}
           onJoined={async (ch) => {
             setModal(null);
             await reload();

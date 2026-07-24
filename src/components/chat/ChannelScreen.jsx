@@ -13,11 +13,13 @@ import ThreadPanel from "./ThreadPanel.jsx";
 import MembersPanel from "./MembersPanel.jsx";
 import FilesPanel from "./FilesPanel.jsx";
 import PinsPanel from "./PinsPanel.jsx";
+import ScheduledPanel from "./ScheduledPanel.jsx";
 import ChannelHeader from "./ChannelHeader.jsx";
 import ChannelSettingsModal from "../modals/ChannelSettingsModal.jsx";
 import SearchModal from "../modals/SearchModal.jsx";
 import { Loading } from "../common/Modal.jsx";
 import Icon from "../common/Icon.jsx";
+import Avatar from "../common/Avatar.jsx";
 
 const TYPING_TTL = 4000;
 
@@ -50,7 +52,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
   const [loadingMore, setLoadingMore] = useState(false);
   const [typing, setTyping] = useState({});
   const [receipts, setReceipts] = useState({}); // user_id -> last_read_at (ms epoch)
-  const [panel, setPanel] = useState(null); // 'members' | 'files' | null
+  const [panel, setPanel] = useState(null); // 'members' | 'files' | 'pins' | 'scheduled' | null
   const [thread, setThread] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -59,6 +61,10 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
   const bottomRef = useRef(null);
   const atBottom = useRef(true);
   const markReadTimer = useRef(null);
+  // While loading older messages we prepend content and manually restore the
+  // scroll offset; suppress the ResizeObserver's auto-pin during that window so
+  // the two don't fight (which would cause a visible jump).
+  const suppressReflow = useRef(false);
   // Reply message ids we've already folded into a parent's reply_count, so a
   // re-delivered event, a reconnect replay, or StrictMode's double-invoked
   // effects can never inflate the count (the cause of "1 reply" showing as "4").
@@ -86,6 +92,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
   useSubscription(channel.id);
 
   const isDirect = channel.channel_type === "direct";
+  const isArchived = !!channel.archived_at;
   const canModerate = members.canAdminister;
 
   // ---- initial history ----
@@ -143,6 +150,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
   async function loadOlder() {
     if (!cursor) return;
     setLoadingMore(true);
+    suppressReflow.current = true;
     const el = scrollRef.current;
     const prev = el?.scrollHeight || 0;
     try {
@@ -151,6 +159,10 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
       setCursor(res.next_cursor);
       requestAnimationFrame(() => {
         if (el) el.scrollTop = el.scrollHeight - prev;
+        // Release the suppression on the next frame, after the offset restore.
+        requestAnimationFrame(() => {
+          suppressReflow.current = false;
+        });
       });
     } finally {
       setLoadingMore(false);
@@ -240,6 +252,17 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
     const ts = new Date(f.last_read_at).getTime();
     setReceipts((r) => (r[f.user_id] >= ts ? r : { ...r, [f.user_id]: ts }));
   });
+  // Patch cached message authors when someone updates their profile, so a name
+  // or avatar change is reflected on their existing messages without a reload.
+  useRealtime("profile_updated", (f) => {
+    setMessages((m) =>
+      m.map((x) =>
+        x.author?.id === f.user_id
+          ? { ...x, author: { ...x.author, display_name: f.display_name, avatar_url: f.avatar_url } }
+          : x
+      )
+    );
+  });
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -256,6 +279,26 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
     }, 1000);
     return () => clearInterval(iv);
   }, []);
+
+  // Keep the view anchored to the bottom when late-loading images (or any
+  // content) change the stream's height. Without this, an image that finishes
+  // decoding after render pushes the latest messages down out of view. We only
+  // re-pin when the user was already at the bottom, and never while loadOlder
+  // is manually restoring the scroll offset (suppressReflow).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const inner = el.firstElementChild || el;
+    const ro = new ResizeObserver(() => {
+      if (suppressReflow.current) return;
+      if (atBottom.current) {
+        // Jump (not smooth) so rapid successive image loads don't animate.
+        bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+      }
+    });
+    ro.observe(inner);
+    return () => ro.disconnect();
+  }, [channel.id]);
 
   const handleSent = useCallback((msg) => {
     if (!msg.parent_id) {
@@ -302,8 +345,12 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
   // guests cannot create channels but CAN send messages; posting requires
   // membership. While the member roster is still loading, don't prematurely
   // show the "join" state — assume posting is allowed to avoid a flash, and let
-  // the real membership result settle it a moment later.
-  const canPost = isDirect || members.isMember || members.loading;
+  // the real membership result settle it a moment later. Archived channels are
+  // read-only for everyone.
+  const canPost = !isArchived && (isDirect || members.isMember || members.loading);
+  const composerDisabledReason = isArchived
+    ? "This channel is archived and read-only."
+    : "Join this channel to send messages.";
 
   return (
     <div className="channel-screen">
@@ -316,6 +363,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
         onToggleMembers={() => togglePanel("members")}
         onToggleFiles={() => togglePanel("files")}
         onTogglePins={() => togglePanel("pins")}
+        onToggleScheduled={() => togglePanel("scheduled")}
         onSearch={() => setShowSearch(true)}
         onOpenSettings={() => setShowSettings(true)}
         onToggleSidebar={onToggleSidebar}
@@ -361,7 +409,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
               placeholder={`Message ${channel.name ? "#" + channel.name : displayName(channel.peer)}`}
               onSent={handleSent}
               disabled={!canPost}
-              disabledReason="Join this channel to send messages."
+              disabledReason={composerDisabledReason}
             />
           </div>
         </div>
@@ -391,6 +439,9 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
               onJumpToMessage?.(m);
             }}
           />
+        )}
+        {panel === "scheduled" && (
+          <ScheduledPanel channel={channel} onClose={() => setPanel(null)} />
         )}
         {thread && (
           <ThreadPanel
@@ -436,7 +487,11 @@ function ChannelIntro({ channel }) {
   return (
     <div className="channel-intro">
       <div className="channel-intro-mark">
-        <Icon name={isDirect ? "at" : channel.channel_type === "private" ? "lock" : "hash"} size={26} />
+        {isDirect && channel.peer ? (
+          <Avatar user={channel.peer} size={52} />
+        ) : (
+          <Icon name={isDirect ? "at" : channel.channel_type === "private" ? "lock" : "hash"} size={26} />
+        )}
       </div>
       <h2>{isDirect ? displayName(channel.peer) : name}</h2>
       <p className="muted">

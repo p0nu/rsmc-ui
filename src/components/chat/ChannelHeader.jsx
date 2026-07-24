@@ -1,4 +1,5 @@
 import { channelName, displayName } from "../../lib/format.js";
+import Avatar from "../common/Avatar.jsx";
 import Icon from "../common/Icon.jsx";
 
 export default function ChannelHeader({
@@ -9,30 +10,41 @@ export default function ChannelHeader({
   onToggleMembers,
   onToggleFiles,
   onTogglePins,
+  onToggleScheduled,
   onSearch,
   onOpenSettings,
   onToggleSidebar,
 }) {
   const isDirect = channel.channel_type === "direct";
   const isPrivate = channel.channel_type === "private";
+  const isArchived = !!channel.archived_at;
   const peerOnline = isDirect && channel.peer ? presence[channel.peer.id]?.online : null;
   const title = isDirect ? displayName(channel.peer) : channel.name || "untitled";
 
   return (
     <header className="channel-header">
       <button className="channel-header-menu" onClick={onToggleSidebar} aria-label="Menu">
-        <Icon name="back" size={20} />
+        <Icon name="menu" size={20} />
       </button>
 
       <div className="channel-header-id">
         <span className="channel-header-glyph">
           {isDirect ? (
-            <span className={`presence ${peerOnline ? "online" : ""}`} style={{ width: 11, height: 11 }} />
+            channel.peer ? (
+              <Avatar user={channel.peer} size={22} online={!!peerOnline} />
+            ) : (
+              <span className={`presence ${peerOnline ? "online" : ""}`} style={{ width: 11, height: 11 }} />
+            )
           ) : (
             <Icon name={isPrivate ? "lock" : "hash"} size={18} />
           )}
         </span>
         <h2 className="channel-header-title">{title}</h2>
+        {isArchived && (
+          <span className="channel-header-archived" title="This channel is archived">
+            <Icon name="archive" size={13} /> Archived
+          </span>
+        )}
         {channel.topic && (
           <>
             <span className="channel-header-divider" />
@@ -49,6 +61,15 @@ export default function ChannelHeader({
         >
           <Icon name="search" size={17} />
         </button>
+        {!isDirect && (
+          <button
+            className={`btn btn-ghost btn-icon btn-sm ${activePanel === "scheduled" ? "active" : ""}`}
+            onClick={onToggleScheduled}
+            title="Scheduled messages"
+          >
+            <Icon name="clock" size={17} />
+          </button>
+        )}
         <button
           className={`btn btn-ghost btn-icon btn-sm ${activePanel === "pins" ? "active" : ""}`}
           onClick={onTogglePins}

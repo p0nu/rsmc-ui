@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.7.0] - lifecycle, status, scheduling, drafts, avatars, and polish
+
+### Added
+- **Channel archival** - an archive/unarchive toggle in channel settings
+  (admins, not DMs) with a confirm prompt. Archived channels show an "Archived"
+  badge in the header and a read-only composer explaining the channel is
+  archived. Archived channels are hidden from the sidebar by default.
+- **Browse & join** - the Browse Channels dialog is now a real public-channel
+  directory with member counts and Join / Open actions; joining opens the
+  channel.
+- **Custom status** - a status editor in your profile (emoji + text, one-tap
+  presets, and a clear button). A status badge shows next to the author's name
+  on their messages, and DM peers' statuses propagate live.
+- **Scheduled messages** - a clock button in the composer opens a schedule
+  popover (in 1 hour / tomorrow 9am / Monday 9am / custom time). A **Scheduled**
+  side panel (clock icon in the channel header) lists pending scheduled messages
+  with a cancel action.
+- **Drafts** - the composer auto-saves an unsent draft per channel and restores
+  it when you return; sending or scheduling clears it.
+- **Markdown rendering** - messages render **bold**, *italic*, ~~strike~~,
+  `inline code`, code fences, blockquotes, lists, auto-linked URLs, and
+  highlighted @mentions, via a safe, dependency-free renderer (no
+  `dangerouslySetInnerHTML`).
+- **Uploaded avatars** - your profile now takes a real image upload
+  (change / remove) instead of an avatar URL field.
+
+### Changed
+- Membership rosters update live from `member_joined` / `member_left` events.
+- Message authors, DM peers, and member lists patch in place on
+  `profile_updated` and `status_changed`, so name/avatar/status changes appear
+  without a reload.
+- DM headers and the conversation intro now show the peer's avatar instead of a
+  bare dot/@ glyph.
+- The collapsed-sidebar toggle in the channel header uses a hamburger (menu)
+  icon instead of the misleading back-arrow.
+
+### Fixed
+- Late-loading images no longer push the latest messages out of view: a
+  `ResizeObserver` keeps the conversation pinned to the bottom when content
+  height changes, coordinated with "load older" so the two don't fight.
+- Presence dots now update for other users (paired with the engine's presence
+  broadcast fix).
+
+### Notes
+- Requires the matching **`rsmc-engine` v0.7.0** for the archival, status,
+  scheduled-message, draft, and avatar endpoints and the new realtime events.
+
 ## [0.6.0] - admin console overview
 
 ### Added

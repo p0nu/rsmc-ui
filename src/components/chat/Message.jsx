@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { api } from "../../api/endpoints.js";
-import { clockTime, displayName, parseMentions } from "../../lib/format.js";
+import { clockTime, displayName } from "../../lib/format.js";
 import Avatar from "../common/Avatar.jsx";
 import Icon from "../common/Icon.jsx";
+import Markdown from "../common/Markdown.jsx";
 import FileAttachment from "../common/FileAttachment.jsx";
 
 export default function Message({
@@ -90,6 +91,19 @@ export default function Message({
         {!grouped && (
           <div className="msg-meta">
             <span className="msg-author">{displayName(author)}</span>
+            {(author?.status_emoji || author?.status_text) && (
+              <span
+                className="msg-status"
+                title={author.status_text || ""}
+              >
+                {author.status_emoji && (
+                  <span className="msg-status-emoji">{author.status_emoji}</span>
+                )}
+                {author.status_text && (
+                  <span className="msg-status-text">{author.status_text}</span>
+                )}
+              </span>
+            )}
             {author?.role === "admin" && <span className="badge badge-admin">Admin</span>}
             <span className="msg-time">{clockTime(message.created_at)}</span>
             {message.edited_at && !deleted && <span className="msg-edited">edited</span>}
@@ -128,13 +142,7 @@ export default function Message({
           </div>
         ) : message.content ? (
           <div className="msg-text">
-            {parseMentions(message.content).map((seg, i) =>
-              seg.type === "mention" ? (
-                <span key={i} className="mention">{seg.value}</span>
-              ) : (
-                <span key={i}>{seg.value}</span>
-              )
-            )}
+            <Markdown content={message.content} />
           </div>
         ) : null}
 

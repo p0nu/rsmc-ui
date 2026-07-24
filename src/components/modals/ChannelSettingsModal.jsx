@@ -14,6 +14,31 @@ export default function ChannelSettingsModal({ channel, canAdminister, onClose, 
   const [busy, setBusy] = useState(false);
   const [muted, setMuted] = useState(!!channel.muted);
   const [muteBusy, setMuteBusy] = useState(false);
+  const [archived, setArchived] = useState(!!channel.archived_at);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+
+  const isDirect = channel.channel_type === "direct";
+  const isGroup = channel.channel_type === "group";
+  const canArchive = canAdminister && !isDirect && !isGroup;
+
+  async function toggleArchive() {
+    const next = !archived;
+    if (next && !confirm(`Archive #${channel.name}? It becomes read-only and is hidden from the channel list. You can unarchive it later.`)) {
+      return;
+    }
+    setArchiveBusy(true);
+    try {
+      if (next) await api.archiveChannel(channel.id);
+      else await api.unarchiveChannel(channel.id);
+      setArchived(next);
+      toast.success(next ? "Channel archived" : "Channel unarchived", `#${channel.name}`);
+      onUpdated?.();
+    } catch (e) {
+      toast.error("Couldn't update channel", e.message);
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
 
   async function toggleMute() {
     const next = !muted;
@@ -105,6 +130,30 @@ export default function ChannelSettingsModal({ channel, canAdminister, onClose, 
             </span>
           </button>
         </div>
+
+        {canArchive && (
+          <div className="field">
+            <label className="field-label">Channel lifecycle</label>
+            <button
+              type="button"
+              className={`mute-toggle ${archived ? "is-muted" : ""}`}
+              onClick={toggleArchive}
+              disabled={archiveBusy}
+            >
+              <Icon name="archive" size={16} />
+              <span className="mute-toggle-text">
+                <span className="mute-toggle-title">
+                  {archived ? "Archived" : "Archive this channel"}
+                </span>
+                <span className="mute-toggle-hint">
+                  {archived
+                    ? "Read-only and hidden from the channel list. Unarchive to reopen."
+                    : "Make read-only and hide it from the channel list."}
+                </span>
+              </span>
+            </button>
+          </div>
+        )}
 
         {!canAdminister && (
           <div className="panel-note">

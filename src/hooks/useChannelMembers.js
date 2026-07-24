@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api/endpoints.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useRealtime } from "./useRealtime.js";
 
 // Loads a channel's members and derives the current user's channel role.
 // Note: the engine's /members returns UserPublic (no per-member role), so we
@@ -26,6 +27,33 @@ export function useChannelMembers(channel) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Patch the roster live from realtime events so it stays current without a
+  // refetch: additions, removals, and profile changes.
+  useRealtime("member_joined", (f) => {
+    if (!channel || f.channel_id !== channel.id) return;
+    setMembers((ms) => (ms.some((m) => m.id === f.user.id) ? ms : [...ms, f.user]));
+  });
+  useRealtime("member_left", (f) => {
+    if (!channel || f.channel_id !== channel.id) return;
+    setMembers((ms) => ms.filter((m) => m.id !== f.user_id));
+  });
+  useRealtime("profile_updated", (f) => {
+    setMembers((ms) =>
+      ms.map((m) =>
+        m.id === f.user_id
+          ? { ...m, display_name: f.display_name, avatar_url: f.avatar_url }
+          : m
+      )
+    );
+  });
+  useRealtime("status_changed", (f) => {
+    setMembers((ms) =>
+      ms.map((m) =>
+        m.id === f.user_id ? { ...m, status_emoji: f.emoji, status_text: f.text } : m
+      )
+    );
+  });
 
   const isCreator = channel?.created_by === user.id;
   // The creator is always a member; otherwise check the loaded roster. This

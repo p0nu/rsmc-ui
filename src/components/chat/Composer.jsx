@@ -3,18 +3,62 @@ import { api } from "../../api/endpoints.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useToast } from "../../context/ToastContext.jsx";
 import { fileSize } from "../../lib/format.js";
+import { useDraft } from "../../hooks/useDraft.js";
 import Icon from "../common/Icon.jsx";
 
-export default function Composer({ channelId, parentId = null, placeholder, onSent, disabled, disabledReason }) {
+// Build the preset schedule options relative to now: in 1 hour, tomorrow 9am,
+// and next Monday 9am. Returns [{ label, date }].
+function schedulePresets() {
+  const now = new Date();
+
+  const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+
+  const tomorrow9 = new Date(now);
+  tomorrow9.setDate(now.getDate() + 1);
+  tomorrow9.setHours(9, 0, 0, 0);
+
+  const monday9 = new Date(now);
+  const day = monday9.getDay(); // 0=Sun..6=Sat
+  const daysUntilMonday = ((8 - day) % 7) || 7; // always the *next* Monday
+  monday9.setDate(now.getDate() + daysUntilMonday);
+  monday9.setHours(9, 0, 0, 0);
+
+  return [
+    { key: "1hr", label: "In 1 hour", date: inOneHour },
+    { key: "tomorrow", label: "Tomorrow at 9:00 AM", date: tomorrow9 },
+    { key: "monday", label: "Monday at 9:00 AM", date: monday9 },
+  ];
+}
+
+export default function Composer({ channelId, parentId = null, placeholder, onSent, onScheduled, disabled, disabledReason }) {
   const { rt } = useAuth();
   const toast = useToast();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customValue, setCustomValue] = useState("");
   const fileRef = useRef(null);
   const lastTyping = useRef(0);
   const inputRef = useRef(null);
+
+  // Drafts: only the main channel composer persists (not thread replies).
+  const { save: saveDraft, clear: clearDraft } = useDraft(channelId, {
+    enabled: !parentId,
+    onRestore: (content) => {
+      setText(content);
+      // Resize the textarea to fit restored content on the next frame.
+      requestAnimationFrame(() => {
+        const el = inputRef.current;
+        if (el) {
+          el.style.height = "auto";
+          el.style.height = Math.min(el.scrollHeight, 220) + "px";
+        }
+      });
+    },
+  });
 
   // @mention autocomplete state
   const [mention, setMention] = useState(null); // { query, start } | null
@@ -60,6 +104,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
     const value = e.target.value;
     setText(value);
     emitTyping();
+    saveDraft(value);
     e.target.style.height = "auto";
     e.target.style.height = Math.min(e.target.scrollHeight, 220) + "px";
     const m = detectMention(value, e.target.selectionStart);
@@ -125,9 +170,45 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
       });
       setText("");
       setAttachments([]);
+      clearDraft();
       onSent?.(msg);
     } catch (err) {
       toast.error("Message not sent", err.message);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function schedule(date) {
+    const content = text.trim();
+    if (!content) {
+      toast.error("Nothing to schedule", "Type a message first.");
+      return;
+    }
+    if (!date || isNaN(date.getTime())) {
+      toast.error("Pick a time", "That date didn't look right.");
+      return;
+    }
+    if (date.getTime() <= Date.now()) {
+      toast.error("Pick a future time", "Scheduled time must be later than now.");
+      return;
+    }
+    setSending(true);
+    try {
+      await api.scheduleMessage(channelId, {
+        content,
+        parent_id: parentId,
+        scheduled_for: date.toISOString(),
+      });
+      setText("");
+      clearDraft();
+      setScheduleOpen(false);
+      setCustomOpen(false);
+      setCustomValue("");
+      toast.success("Message scheduled", date.toLocaleString());
+      onScheduled?.();
+    } catch (err) {
+      toast.error("Couldn't schedule", err.message);
     } finally {
       setSending(false);
     }
@@ -239,6 +320,66 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
           {uploading ? <span className="spinner" /> : <Icon name="paperclip" size={18} />}
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={pickFiles} />
+
+        {/* Scheduling is offered for normal channel messages, not thread replies. */}
+        {!parentId && (
+          <div className="composer-schedule-wrap">
+            <button
+              type="button"
+              className={`composer-tool ${scheduleOpen ? "active" : ""}`}
+              onClick={() => {
+                setScheduleOpen((v) => !v);
+                setCustomOpen(false);
+              }}
+              title="Schedule for later"
+              aria-label="Schedule for later"
+              disabled={!text.trim()}
+            >
+              <Icon name="clock" size={18} />
+            </button>
+            {scheduleOpen && (
+              <>
+                <div className="composer-schedule-backdrop" onClick={() => setScheduleOpen(false)} />
+                <div className="composer-schedule-pop" role="menu">
+                  <div className="composer-schedule-head">Schedule message</div>
+                  {schedulePresets().map((p) => (
+                    <button
+                      key={p.key}
+                      className="composer-schedule-opt"
+                      onClick={() => schedule(p.date)}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                  {customOpen ? (
+                    <div className="composer-schedule-custom">
+                      <input
+                        type="datetime-local"
+                        className="input"
+                        value={customValue}
+                        onChange={(e) => setCustomValue(e.target.value)}
+                      />
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => schedule(new Date(customValue))}
+                        disabled={!customValue}
+                      >
+                        Schedule
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="composer-schedule-opt composer-schedule-custom-open"
+                      onClick={() => setCustomOpen(true)}
+                    >
+                      Custom time…
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="composer-spacer" />
 
