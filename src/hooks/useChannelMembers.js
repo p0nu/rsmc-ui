@@ -17,8 +17,10 @@ export function useChannelMembers(channel) {
     if (!channel) return;
     setLoading(true);
     try {
-      const list = await api.listMembers(channel.id);
-      setMembers(list);
+      const res = await api.listMembers(channel.id, { limit: 200 });
+      // Response is { members, next_cursor }. For very large channels this
+      // shows the first page; the roster patches live via realtime events.
+      setMembers(Array.isArray(res) ? res : res.members || []);
     } finally {
       setLoading(false);
     }

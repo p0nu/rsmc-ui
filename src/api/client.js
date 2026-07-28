@@ -9,17 +9,23 @@
 const BASE = "/api/v1";
 
 export class ApiError extends Error {
-  constructor(status, code, message) {
+  constructor(status, code, message, retryAfter = null) {
     super(message || code || `HTTP ${status}`);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    // Seconds to wait before retrying, parsed from the Retry-After header on a
+    // 429. Null when not applicable.
+    this.retryAfter = retryAfter;
   }
   get isAuth() {
     return this.status === 401;
   }
   get isForbidden() {
     return this.status === 403;
+  }
+  get isRateLimited() {
+    return this.status === 429;
   }
 }
 
@@ -66,7 +72,20 @@ async function toError(res) {
   } catch {
     /* non-JSON */
   }
-  return new ApiError(res.status, code, message);
+  // On a 429, read Retry-After (seconds) so callers can show a countdown and
+  // give a friendlier default message than the raw one.
+  let retryAfter = null;
+  if (res.status === 429) {
+    const hdr = res.headers.get("retry-after");
+    const secs = hdr ? parseInt(hdr, 10) : NaN;
+    retryAfter = Number.isFinite(secs) ? secs : null;
+    if (!message || message === "Request failed") {
+      message = retryAfter
+        ? `Too many requests. Try again in ${retryAfter}s.`
+        : "Too many requests. Please slow down and try again.";
+    }
+  }
+  return new ApiError(res.status, code, message, retryAfter);
 }
 
 async function request(method, path, { body, raw, retry = true, timeoutMs } = {}) {

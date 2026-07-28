@@ -42,7 +42,13 @@ export const api = {
   unarchiveChannel: (id) => http.post(`/channels/${id}/unarchive`),
   getChannel: (id) => http.get(`/channels/${id}`),
   updateChannel: (id, payload) => http.patch(`/channels/${id}`, payload),
-  listMembers: (id) => http.get(`/channels/${id}/members`),
+  listMembers: (id, { limit, cursor } = {}) => {
+    const p = new URLSearchParams();
+    if (limit) p.set("limit", String(limit));
+    if (cursor) p.set("cursor", cursor);
+    const qs = p.toString();
+    return http.get(`/channels/${id}/members${qs ? `?${qs}` : ""}`);
+  },
   markChannelRead: (id) => http.post(`/channels/${id}/read`),
   channelReceipts: (id) => http.get(`/channels/${id}/receipts`),
   setChannelMute: (id, muted) => http.patch(`/channels/${id}/mute`, { muted }),
@@ -64,7 +70,13 @@ export const api = {
   deleteMessage: (messageId) => http.del(`/messages/${messageId}`),
   pinMessage: (messageId) => http.post(`/messages/${messageId}/pin`),
   unpinMessage: (messageId) => http.del(`/messages/${messageId}/pin`),
-  channelPins: (channelId) => http.get(`/channels/${channelId}/pins`),
+  channelPins: (channelId, { limit, cursor } = {}) => {
+    const p = new URLSearchParams();
+    if (limit) p.set("limit", String(limit));
+    if (cursor) p.set("cursor", cursor);
+    const qs = p.toString();
+    return http.get(`/channels/${channelId}/pins${qs ? `?${qs}` : ""}`);
+  },
   search: (q, { channelId, limit = 30 } = {}) => {
     const p = new URLSearchParams({ q, limit: String(limit) });
     if (channelId) p.set("channel_id", channelId);

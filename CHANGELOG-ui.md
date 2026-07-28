@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.0] - search filters, quick switcher, resilient sends, and pagination
+
+### Added
+- **Search filters.** The search dialog accepts `from:name`, `in:#channel`,
+  `has:file`, and `after:`/`before:` date operators (shown as inline hints), and
+  passes them through to the engine so results narrow by author, channel,
+  attachments, and date range.
+- **Quick switcher.** Cmd/Ctrl+K opens a keyboard-first switcher to jump to any
+  channel or DM by typing; arrow keys and Enter navigate, Esc closes.
+- **Edit last message with Up arrow.** Pressing Up in an empty composer opens
+  your most recent message for editing.
+
+### Changed
+- **Paginated member and pin lists.** The members hook and pins panel read the
+  new `{ members|pins, next_cursor }` shape (with a fallback to the old array
+  form), so large channels load without pulling everything at once.
+- **Send failures are recoverable.** A failed send (network error, rate limit,
+  server error) now keeps your text and shows an inline Retry instead of losing
+  the message. Rate-limited sends surface a friendly "try again in Ns" message
+  from the engine's `Retry-After`.
+
+### Notes
+- Requires **rsmc-engine v0.8.0** for the search operators, pagination shapes,
+  and rate-limit responses.
+
 ## [0.7.0] - lifecycle, status, scheduling, drafts, avatars, and polish
 
 ### Added

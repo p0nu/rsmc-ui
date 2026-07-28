@@ -57,6 +57,12 @@ export default function SearchModal({ channel, onClose, onJump }) {
         />
       </div>
 
+      <div className="search-hint">
+        Filters: <code>from:name</code> <code>in:#channel</code>{" "}
+        <code>has:file</code> <code>after:2026-01-01</code>{" "}
+        <code>before:2026-12-31</code>
+      </div>
+
       <div className="search-scope">
         <button
           className={`chip ${scope === "channel" ? "active" : ""}`}

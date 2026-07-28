@@ -14,8 +14,12 @@ export default function PinsPanel({ channel, onClose, onJump }) {
   const reload = useCallback(() => {
     let live = true;
     api
-      .channelPins(channel.id)
-      .then((rows) => live && setPins(Array.isArray(rows) ? rows : []))
+      .channelPins(channel.id, { limit: 100 })
+      .then((res) => {
+        if (!live) return;
+        // Response is { pins, next_cursor }; tolerate a bare array too.
+        setPins(Array.isArray(res) ? res : res.pins || []);
+      })
       .finally(() => live && setLoading(false));
     return () => {
       live = false;

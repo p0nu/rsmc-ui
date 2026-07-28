@@ -37,6 +37,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [customValue, setCustomValue] = useState("");
@@ -103,6 +104,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
   function onTextChange(e) {
     const value = e.target.value;
     setText(value);
+    if (sendError) setSendError(null);
     emitTyping();
     saveDraft(value);
     e.target.style.height = "auto";
@@ -162,6 +164,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
     const content = text.trim();
     if (!content && attachments.length === 0) return;
     setSending(true);
+    setSendError(null);
     try {
       const msg = await api.sendMessage(channelId, {
         content,
@@ -173,7 +176,14 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
       clearDraft();
       onSent?.(msg);
     } catch (err) {
-      toast.error("Message not sent", err.message);
+      // Keep the composer contents so the user can retry without retyping.
+      // Rate-limit errors get a friendlier, countdown-style message.
+      const msg = err.isRateLimited
+        ? err.retryAfter
+          ? `You're sending too fast. Try again in ${err.retryAfter}s.`
+          : "You're sending too fast. Please wait a moment."
+        : err.message || "Message not sent.";
+      setSendError(msg);
     } finally {
       setSending(false);
     }
@@ -225,6 +235,27 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
 
   return (
     <div className="composer">
+      {sendError && (
+        <div className="composer-error" role="alert">
+          <Icon name="alert" size={15} />
+          <span className="composer-error-text">{sendError}</span>
+          <button
+            className="composer-error-retry"
+            onClick={send}
+            disabled={sending}
+          >
+            {sending ? "Retrying..." : "Retry"}
+          </button>
+          <button
+            className="composer-error-x"
+            onClick={() => setSendError(null)}
+            aria-label="Dismiss"
+          >
+            <Icon name="x" size={13} />
+          </button>
+        </div>
+      )}
+
       {attachments.length > 0 && (
         <div className="composer-attachments">
           {attachments.map((a) => (

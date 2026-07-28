@@ -12,6 +12,7 @@ import AdminConsole from "../components/admin/AdminConsole.jsx";
 import CreateChannelModal from "../components/modals/CreateChannelModal.jsx";
 import NewDirectModal from "../components/modals/NewDirectModal.jsx";
 import BrowseChannelsModal from "../components/modals/BrowseChannelsModal.jsx";
+import QuickSwitcher from "../components/modals/QuickSwitcher.jsx";
 import ProfileModal from "../components/modals/ProfileModal.jsx";
 import SettingsModal from "../components/modals/SettingsModal.jsx";
 import { EmptyState } from "../components/common/Modal.jsx";
@@ -27,6 +28,20 @@ export default function Workspace() {
   const [view, setView] = useState("chat"); // 'chat' | 'admin'
   const [presence, setPresence] = useState({});
   const [modal, setModal] = useState(null); // 'create' | 'direct' | 'browse' | 'profile'
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  // Global Cmd/Ctrl+K opens the quick switcher (toggle). Ignored when a text
+  // field already has focus and the user is just typing 'k'.
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setSwitcherOpen((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [jumpTarget, setJumpTarget] = useState(null); // { id, channel_id, parent_id? } | null
   const { links: appLinks, reload: reloadAppLinks } = useAppLinks();
@@ -64,7 +79,8 @@ export default function Workspace() {
         list.map(async (ch) => {
           if (ch.channel_type !== "direct") return ch;
           try {
-            const members = await api.listMembers(ch.id);
+            const res = await api.listMembers(ch.id, { limit: 200 });
+            const members = Array.isArray(res) ? res : res.members || [];
             const peer = members.find((m) => m.id !== user.id) || members[0];
             return { ...ch, peer };
           } catch {
@@ -385,6 +401,15 @@ export default function Workspace() {
         <ProfileModal onClose={() => setModal(null)} onOpenSettings={() => setModal("settings")} />
       )}
       {modal === "settings" && <SettingsModal onClose={() => setModal(null)} />}
+
+      {switcherOpen && (
+        <QuickSwitcher
+          channels={channels}
+          selfId={user.id}
+          onPick={openChannel}
+          onClose={() => setSwitcherOpen(false)}
+        />
+      )}
 
       {mobileSidebar && <div className="sidebar-scrim" onClick={() => setMobileSidebar(false)} />}
     </div>
