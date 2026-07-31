@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { api } from "../../api/endpoints.js";
+import { ApiError } from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useToast } from "../../context/ToastContext.jsx";
 import { displayName } from "../../lib/format.js";
@@ -32,6 +33,37 @@ export default function ProfileModal({ onClose, onOpenSettings }) {
   const [statusEmoji, setStatusEmoji] = useState(user.status_emoji || "");
   const [statusText, setStatusText] = useState(user.status_text || "");
   const [statusBusy, setStatusBusy] = useState(false);
+
+  // Email account management (verification + change).
+  const [newEmail, setNewEmail] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
+  const verified = user?.email_verified;
+
+  async function requestEmailChange(e) {
+    e.preventDefault();
+    setEmailBusy(true);
+    try {
+      await api.requestEmailChange(newEmail.trim());
+      toast.success("Confirm your new email", "We sent a confirmation link to the new address.");
+      setNewEmail("");
+    } catch (err) {
+      toast.error("Couldn't change email", err instanceof ApiError ? err.message : "Try again.");
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
+  async function resendVerification() {
+    setEmailBusy(true);
+    try {
+      await api.sendVerification();
+      toast.success("Verification sent", "Check your inbox for the verification link.");
+    } catch (err) {
+      toast.error("Couldn't send verification", err instanceof ApiError ? err.message : "Try again.");
+    } finally {
+      setEmailBusy(false);
+    }
+  }
 
   async function save(e) {
     e.preventDefault();
@@ -227,6 +259,49 @@ export default function ProfileModal({ onClose, onOpenSettings }) {
         <div className="field">
           <label className="field-label">Display name</label>
           <input className="input" value={name} maxLength={64} onChange={(e) => setName(e.target.value)} />
+        </div>
+
+        <div className="field">
+          <label className="field-label">Email</label>
+          <div className="profile-email-row">
+            <span>{user?.email}</span>
+            {verified === false && (
+              <button type="button" className="btn btn-secondary btn-sm"
+                disabled={emailBusy} onClick={resendVerification}>
+                Resend verification
+              </button>
+            )}
+            {verified === true && <span className="badge badge-success">Verified</span>}
+          </div>
+        </div>
+
+        <div className="field">
+          <label className="field-label" htmlFor="profile-new-email">Change email</label>
+          <div className="profile-email-change">
+            <input
+              id="profile-new-email" className="input" type="email"
+              value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter here should send the confirmation, not submit the
+                // surrounding display-name form.
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (newEmail.trim() && !emailBusy) requestEmailChange(e);
+                }
+              }}
+              placeholder="new@company.com"
+            />
+            <button
+              type="button" className="btn btn-secondary"
+              disabled={emailBusy || !newEmail.trim()}
+              onClick={requestEmailChange}
+            >
+              {emailBusy ? <span className="spinner" /> : "Send confirmation"}
+            </button>
+          </div>
+          <span className="field-hint">
+            We'll send a confirmation link to the new address. Your email changes only after you confirm.
+          </span>
         </div>
 
         <div className="form-actions" style={{ justifyContent: "space-between" }}>

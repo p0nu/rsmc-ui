@@ -1758,6 +1758,8 @@
 .empty-state {
   text-align: center;
   max-width: 380px;
+  margin: 0 auto;
+  align-self: center;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2002,7 +2004,11 @@
 .admin-table-head,
 .admin-row {
   display: grid;
-  grid-template-columns: 2.4fr 1fr 1fr 1.1fr auto;
+  /* Actions column is a fixed width (not auto) so rows without a button, e.g.
+     the admin's own row, keep the same column geometry as rows with one. This
+     keeps the ROLE dropdowns vertically aligned across the admins/members
+     tables. */
+  grid-template-columns: 2.4fr 1fr 1fr 1.1fr 108px;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
@@ -3593,3 +3599,71 @@
   padding: 1px 5px;
   color: var(--ink-2);
 }
+
+/* Email verification banner (0.9.0) */
+.verify-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--warning-bg, #3a2f1a);
+  color: var(--warning-fg, #e8c37a);
+  font-size: 13px;
+  border-bottom: 1px solid var(--border, #2a2a33);
+}
+.verify-banner-action {
+  margin-left: auto;
+  background: none;
+  border: 1px solid currentColor;
+  color: inherit;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.verify-banner-action:hover { opacity: 0.85; }
+
+/* Settings account section (0.9.0) */
+.settings-email-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.settings-email-change { margin-top: 14px; }
+.auth-link-inline {
+  display: inline-block;
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: var(--accent, #6366f1);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+.auth-link-inline:hover { text-decoration: underline; }
+
+/* Browse-channels modal footer (0.9.0 tweak) */
+.browse-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.browse-count {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Profile modal: email/account section (moved from Settings in 0.9.0) */
+.profile-email-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.profile-email-change {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.profile-email-change .input { flex: 1; }

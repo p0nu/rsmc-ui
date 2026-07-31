@@ -19,7 +19,12 @@ function load() {
 export function AuthProvider({ children }) {
   const tokens = useRef(load());
   const rt = useRef(null);
-  if (!rt.current) rt.current = new Realtime();
+  if (!rt.current) {
+    rt.current = new Realtime();
+    // Let the socket always reconnect with the freshest access token, even if
+    // it was refreshed after the initial connect (idle-expiry edge case).
+    rt.current.setTokenProvider(() => tokens.current?.access_token || null);
+  }
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
 

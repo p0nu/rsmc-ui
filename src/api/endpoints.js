@@ -10,6 +10,15 @@ export const api = {
   signup: (payload) => http.post("/auth/signup", payload),
   login: (email, password) => http.post("/auth/login", { email, password }),
   logout: () => http.post("/auth/logout"),
+  // Email verification, password reset, and email change (0.9.0).
+  sendVerification: () => http.post("/users/me/verify-email"),
+  verifyEmail: (token) => http.post("/auth/verify-email", { token }),
+  requestPasswordReset: (email) => http.post("/auth/password-reset", { email }),
+  confirmPasswordReset: (token, new_password) =>
+    http.post("/auth/password-reset/confirm", { token, new_password }),
+  requestEmailChange: (new_email) => http.post("/users/me/email", { new_email }),
+  confirmEmailChange: (token) =>
+    http.post("/auth/confirm-email-change", { token }),
 
   // ---- users ----
   me: () => http.get("/users/me"),

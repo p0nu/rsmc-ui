@@ -11,6 +11,7 @@ export class Realtime {
   constructor() {
     this.ws = null;
     this.token = null;
+    this.getToken = null;
     this.status = "idle"; // idle | connecting | open | closed
     this.handlers = new Map();
     this.statusHandlers = new Set();
@@ -22,12 +23,28 @@ export class Realtime {
   }
 
   connect(token) {
-    this.token = token;
+    if (token) this.token = token;
     this.closing = false;
     this._open();
   }
 
+  // Optional: a function returning the current access token. When set, the
+  // client re-reads it at every (re)connect, so a reconnect that happens after
+  // the token was refreshed elsewhere always uses the freshest token instead of
+  // a stale one captured at first connect. Closes the idle-expiry edge case
+  // where a socket drops after the access token expired but before any REST
+  // call triggered a refresh.
+  setTokenProvider(fn) {
+    this.getToken = fn;
+  }
+
   _open() {
+    // Prefer the live token provider if present; fall back to the last token
+    // explicitly passed to connect().
+    if (this.getToken) {
+      const fresh = this.getToken();
+      if (fresh) this.token = fresh;
+    }
     if (!this.token) return;
     this._setStatus("connecting");
     const scheme = location.protocol === "https:" ? "wss" : "ws";

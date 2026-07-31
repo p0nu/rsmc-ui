@@ -51,8 +51,12 @@ export default function BrowseChannelsModal({ onClose, onOpen, onJoined, onCreat
       onClose={onClose}
       width={520}
       footer={
-        <div className="form-actions" style={{ justifyContent: "space-between" }}>
-          <span className="muted" style={{ fontSize: 13 }}>{filtered.length} channels</span>
+        <div className="browse-footer">
+          <span className="browse-count muted">
+            {filtered.length === 0
+              ? "No channels"
+              : `${filtered.length} ${filtered.length === 1 ? "channel" : "channels"}`}
+          </span>
           <button className="btn btn-primary" onClick={onCreateNew}>
             <Icon name="plus" size={16} /> Create channel
           </button>

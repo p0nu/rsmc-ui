@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { ApiError } from "../api/client.js";
+import { api } from "../api/endpoints.js";
 import { slugifyChannel } from "../lib/format.js";
 import Logo from "../components/common/Logo.jsx";
 
@@ -19,6 +20,11 @@ export default function AuthView() {
     try {
       if (mode === "login") {
         await login(form.email.trim(), form.password);
+      } else if (mode === "forgot") {
+        await api.requestPasswordReset(form.email.trim());
+        // Always report success regardless, to avoid revealing which emails exist.
+        toast.success("Check your email", "If that address has an account, a reset link is on its way.");
+        setMode("login");
       } else {
         await signup({
           email: form.email.trim(),
@@ -31,7 +37,12 @@ export default function AuthView() {
       }
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : "Something went wrong. Try again.";
-      toast.error(mode === "login" ? "Couldn't sign in" : "Couldn't create account", msg);
+      toast.error(
+        mode === "login" ? "Couldn't sign in" :
+        mode === "forgot" ? "Couldn't send reset link" :
+        "Couldn't create account",
+        msg
+      );
     } finally {
       setBusy(false);
     }
@@ -47,10 +58,16 @@ export default function AuthView() {
           </div>
 
           <div className="auth-card">
-          <h1 className="auth-title">{mode === "login" ? "Sign in to RSMC" : "Create your account"}</h1>
+          <h1 className="auth-title">{
+            mode === "login" ? "Sign in to RSMC" :
+            mode === "forgot" ? "Reset your password" :
+            "Create your account"
+          }</h1>
           <p className="auth-lede muted">
             {mode === "login"
               ? "Welcome back. Pick up where your team left off."
+              : mode === "forgot"
+              ? "Enter your email and we'll send you a reset link."
               : "Channels, threads, and direct messages for your team."}
           </p>
 
@@ -85,24 +102,37 @@ export default function AuthView() {
               </>
             )}
 
-            <div className="field">
-              <label className="field-label" htmlFor="password">Password</label>
-              <input
-                id="password" className="input" type="password" required minLength={8} maxLength={128}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                value={form.password} onChange={set("password")} placeholder="••••••••"
-              />
-              {mode === "signup" && <span className="field-hint">At least 8 characters.</span>}
-            </div>
+            {mode !== "forgot" && (
+              <div className="field">
+                <label className="field-label" htmlFor="password">Password</label>
+                <input
+                  id="password" className="input" type="password" required minLength={8} maxLength={128}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  value={form.password} onChange={set("password")} placeholder="••••••••"
+                />
+                {mode === "signup" && <span className="field-hint">At least 8 characters.</span>}
+                {mode === "login" && (
+                  <button type="button" className="auth-link-inline" onClick={() => setMode("forgot")}>
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+            )}
 
             <button className="btn btn-primary btn-lg btn-block" disabled={busy} type="submit">
-              {busy ? <span className="spinner on-brand" /> : mode === "login" ? "Sign in" : "Create account"}
+              {busy ? <span className="spinner on-brand" /> : (
+                mode === "login" ? "Sign in" :
+                mode === "forgot" ? "Send reset link" :
+                "Create account"
+              )}
             </button>
           </form>
 
           <div className="auth-switch">
             {mode === "login" ? (
               <>New to RSMC? <button onClick={() => setMode("signup")}>Create an account</button></>
+            ) : mode === "forgot" ? (
+              <>Remembered it? <button onClick={() => setMode("login")}>Back to sign in</button></>
             ) : (
               <>Already have an account? <button onClick={() => setMode("login")}>Sign in</button></>
             )}

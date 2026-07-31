@@ -40,13 +40,6 @@ export default function SettingsModal({ onClose }) {
             ))}
           </div>
         </Section>
-
-        {/* Future settings (notifications, language, accessibility, etc.) slot
-            in here as additional <Section> blocks. */}
-        <div className="settings-more muted">
-          <Icon name="bell" size={15} />
-          <span>More settings — notifications, language, and accessibility — are coming soon.</span>
-        </div>
       </div>
     </Modal>
   );

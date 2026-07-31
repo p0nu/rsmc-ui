@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0] - email flow support and resilient realtime reconnect
+
+### Added
+- **Email flow API.** Client methods for email verification, password reset
+  (request and confirm), and email change (request and confirm), targeting the
+  engine's 0.9.0 endpoints.
+
+### Fixed
+- **Realtime reconnect uses the freshest token.** The WebSocket client now reads
+  the current access token on every reconnect via a token provider, so a socket
+  that drops after the access token was refreshed reconnects with the new token
+  instead of a stale one (closing an idle-expiry edge case that could leave the
+  presence dot grey).
+
+### Notes
+- Requires **rsmc-engine v0.9.0** for the email endpoints.
+
 ## [0.8.0] - search filters, quick switcher, resilient sends, and pagination
 
 ### Added

@@ -338,6 +338,26 @@ export default function Workspace() {
       />
 
       <main className="main">
+        {user?.email_verified === false && (
+          <div className="verify-banner">
+            <Icon name="alert" size={15} />
+            <span>Your email isn't verified yet.</span>
+            <button
+              type="button"
+              className="verify-banner-action"
+              onClick={async () => {
+                try {
+                  await api.sendVerification();
+                  toast.success("Verification sent", "Check your inbox for the link.");
+                } catch {
+                  toast.error("Couldn't send", "Please try again.");
+                }
+              }}
+            >
+              Resend verification
+            </button>
+          </div>
+        )}
         {view === "admin" ? (
           <AdminConsole onAppLinksChanged={reloadAppLinks} />
         ) : active ? (
