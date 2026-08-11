@@ -70,14 +70,14 @@ export default function AdminWebhooks() {
     }
     setSubmitting(true);
     try {
-      // Global (workspace-wide) webhook — requires system admin. Channel-scoped
+      // Global (workspace-wide) webhook - requires system admin. Channel-scoped
       // webhooks are created from a channel's settings instead.
       const created = await api.createWebhook({ target_url: url, events });
       setRevealed(created);
       setCopied(false);
       resetForm();
       load();
-      toast.success("Webhook created", "Copy the signing secret now — it won't be shown again.");
+      toast.success("Webhook created", "Copy the signing secret now - it won't be shown again.");
     } catch (e) {
       toast.error("Couldn't create webhook", e.message);
     } finally {
@@ -134,7 +134,7 @@ export default function AdminWebhooks() {
         <div className="webhook-secret">
           <div className="webhook-secret-head">
             <Icon name="check" size={18} />
-            <strong>Webhook created — save your signing secret</strong>
+            <strong>Webhook created - save your signing secret</strong>
           </div>
           <p className="muted">
             This is the only time the secret will be shown. Use it to verify the

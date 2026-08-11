@@ -1,6 +1,6 @@
-// AppIcon — resolves a bookmark URL to a recognizable icon.
+// AppIcon - resolves a bookmark URL to a recognizable icon.
 //
-// Strategy (Method 2, self-contained — no external requests):
+// Strategy (Method 2, self-contained - no external requests):
 //   1. Match the URL's domain to a known brand in BRANDS → crisp SVG logo
 //      (icon paths from Simple Icons, CC0; simpleicons.org).
 //   2. Otherwise render a colored letter-tile from the bookmark name.

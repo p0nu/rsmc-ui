@@ -1,4 +1,4 @@
-// RSMC logo — a sync glyph: two arcs with arrowheads circling a central node,
+// RSMC logo - a sync glyph: two arcs with arrowheads circling a central node,
 // expressing Realtime Sync + Messaging (the heart of "Realtime Sync, Messaging
 // & Collaboration"). Centered in a 40x40 viewBox so it sits true at any size.
 //

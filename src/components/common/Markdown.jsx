@@ -33,7 +33,7 @@ function splitDelim(text, delim, wrap, keyPrefix) {
     }
     const end = rest.indexOf(delim, start + dl);
     if (end === -1) {
-      // Unbalanced — emit the remainder verbatim.
+      // Unbalanced - emit the remainder verbatim.
       parts.push(rest);
       break;
     }
@@ -48,7 +48,7 @@ function splitDelim(text, delim, wrap, keyPrefix) {
 // Apply inline transforms in priority order. Each transform runs over string
 // pieces only, leaving already-produced elements untouched.
 function inline(text, keyBase = "i") {
-  // 1. inline code first (its contents are literal — no further formatting).
+  // 1. inline code first (its contents are literal - no further formatting).
   let nodes = splitDelim(
     text,
     "`",

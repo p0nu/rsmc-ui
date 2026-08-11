@@ -5,7 +5,7 @@ import { api } from "../api/endpoints.js";
 // changes and debounces saves as the user types. `onRestore(content)` is called
 // once with the restored text (or "") after loading. Returns { save, clear }.
 //
-// Threads (parentId set) don't persist drafts — only the main channel composer.
+// Threads (parentId set) don't persist drafts - only the main channel composer.
 export function useDraft(channelId, { enabled = true, onRestore } = {}) {
   const timer = useRef(null);
   const lastSaved = useRef("");
@@ -52,7 +52,7 @@ export function useDraft(channelId, { enabled = true, onRestore } = {}) {
     [channelId, enabled]
   );
 
-  // Immediate clear (on send/schedule) — cancels any pending debounce.
+  // Immediate clear (on send/schedule) - cancels any pending debounce.
   const clear = useCallback(() => {
     if (!enabled || !channelId) return;
     if (timer.current) {

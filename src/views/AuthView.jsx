@@ -7,11 +7,33 @@ import { slugifyChannel } from "../lib/format.js";
 import Logo from "../components/common/Logo.jsx";
 
 export default function AuthView() {
-  const { login, signup } = useAuth();
+  const { login, completeMfa, signup } = useAuth();
   const toast = useToast();
   const [mode, setMode] = useState("login");
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ email: "", username: "", display_name: "", password: "" });
+  // MFA challenge: set when login returns a second-factor challenge.
+  const [mfaToken, setMfaToken] = useState(null);
+  const [mfaCode, setMfaCode] = useState("");
+  async function verifyMfa(e) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await completeMfa(mfaToken, mfaCode.trim());
+      // On success the auth context sets the user and the app advances.
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Invalid or expired code.";
+      toast.error("Verification failed", msg);
+      setBusy(false);
+    }
+  }
+
+  function cancelMfa() {
+    setMfaToken(null);
+    setMfaCode("");
+    setBusy(false);
+  }
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   async function submit(e) {
@@ -19,7 +41,13 @@ export default function AuthView() {
     setBusy(true);
     try {
       if (mode === "login") {
-        await login(form.email.trim(), form.password);
+        const res = await login(form.email.trim(), form.password);
+        if (res && res.mfaRequired) {
+          // Move to the code-entry step instead of completing login.
+          setMfaToken(res.mfaToken);
+          setBusy(false);
+          return;
+        }
       } else if (mode === "forgot") {
         await api.requestPasswordReset(form.email.trim());
         // Always report success regardless, to avoid revealing which emails exist.
@@ -58,6 +86,39 @@ export default function AuthView() {
           </div>
 
           <div className="auth-card">
+          {mfaToken ? (
+            <>
+              <h1 className="auth-title">Two-factor authentication</h1>
+              <p className="auth-lede muted">
+                Enter the 6-digit code from your authenticator app.
+              </p>
+              <form onSubmit={verifyMfa} className="auth-form">
+                <div className="field">
+                  <label className="field-label" htmlFor="mfa-code">Authentication code</label>
+                  <input
+                    id="mfa-code"
+                    className="input"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    required
+                    maxLength={8}
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="123456"
+                  />
+                </div>
+                <button className="btn btn-primary btn-lg btn-block" disabled={busy} type="submit">
+                  {busy ? "Verifying..." : "Verify"}
+                </button>
+                <button type="button" className="auth-link-inline" onClick={cancelMfa}>
+                  Back to sign in
+                </button>
+              </form>
+            </>
+          ) : (
+          <>
           <h1 className="auth-title">{
             mode === "login" ? "Sign in to RSMC" :
             mode === "forgot" ? "Reset your password" :
@@ -90,7 +151,7 @@ export default function AuthView() {
                     onChange={(e) => setForm((f) => ({ ...f, username: slugifyChannel(e.target.value) }))}
                     placeholder="janedoe"
                   />
-                  <span className="field-hint">3–32 characters. Letters, numbers, dot, dash, underscore.</span>
+                  <span className="field-hint">3-32 characters. Letters, numbers, dot, dash, underscore.</span>
                 </div>
                 <div className="field">
                   <label className="field-label" htmlFor="display">Display name</label>
@@ -143,6 +204,8 @@ export default function AuthView() {
               The first account on a new workspace becomes the workspace admin.
             </p>
           )}
+          </>
+          )}
           </div>
         </div>
       </div>
@@ -151,7 +214,7 @@ export default function AuthView() {
         <div className="auth-aside-inner">
           <h2 className="auth-aside-title">Where your team gets things done.</h2>
           <p className="auth-aside-sub">
-            Organized channels, focused threads, and direct messages — in real time.
+            Organized channels, focused threads, and direct messages - in real time.
           </p>
           <div className="auth-preview">
             <PreviewRow name="Aisha" color="#6366f1" text="Shipped the v2 API 🎉" />

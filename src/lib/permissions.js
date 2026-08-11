@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Permission helpers — mirror the engine's authorization rules so the UI can
+// Permission helpers - mirror the engine's authorization rules so the UI can
 // enable/disable affordances and explain *why* something is unavailable,
 // instead of letting an action fail silently.
 //

@@ -62,7 +62,7 @@ export default function AdminSystem() {
   async function runRestore(path) {
     if (
       !confirm(
-        `Restore the database from:\n\n${path}\n\nThis REPLACES all current data — messages, channels, and users will be overwritten with the contents of the backup. This cannot be undone.\n\nContinue?`
+        `Restore the database from:\n\n${path}\n\nThis REPLACES all current data - messages, channels, and users will be overwritten with the contents of the backup. This cannot be undone.\n\nContinue?`
       )
     ) {
       return;

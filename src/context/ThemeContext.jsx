@@ -2,7 +2,13 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 
 // Theme preference: "light" | "dark" | "system".
 // Persisted to localStorage; "system" follows the OS setting live.
+//
+// Contrast is an orthogonal axis: "normal" | "high". High contrast layers on
+// top of whichever light/dark theme is active (via data-contrast on the root),
+// so a user can have high-contrast light or high-contrast dark.
 const STORAGE_KEY = "rsmc.theme";
+const CONTRAST_KEY = "rsmc.contrast";
+const FONT_SCALE_KEY = "rsmc.fontScale";
 const ThemeContext = createContext(null);
 
 function systemPrefersDark() {
@@ -23,6 +29,22 @@ export function ThemeProvider({ children }) {
     }
   });
 
+  const [contrast, setContrast] = useState(() => {
+    try {
+      return localStorage.getItem(CONTRAST_KEY) || "normal";
+    } catch {
+      return "normal";
+    }
+  });
+
+  const [fontScale, setFontScale] = useState(() => {
+    try {
+      return localStorage.getItem(FONT_SCALE_KEY) || "default";
+    } catch {
+      return "default";
+    }
+  });
+
   const [resolved, setResolved] = useState(() => resolve(preference));
 
   // Apply the resolved theme to the document root.
@@ -36,6 +58,34 @@ export function ThemeProvider({ children }) {
       /* ignore */
     }
   }, [preference]);
+
+  // Apply the contrast axis independently of light/dark.
+  useEffect(() => {
+    if (contrast === "high") {
+      document.documentElement.setAttribute("data-contrast", "high");
+    } else {
+      document.documentElement.removeAttribute("data-contrast");
+    }
+    try {
+      localStorage.setItem(CONTRAST_KEY, contrast);
+    } catch {
+      /* ignore */
+    }
+  }, [contrast]);
+
+  // Apply the font-scale axis (text scaling) independently of theme/contrast.
+  useEffect(() => {
+    if (fontScale === "small" || fontScale === "large") {
+      document.documentElement.setAttribute("data-font-scale", fontScale);
+    } else {
+      document.documentElement.removeAttribute("data-font-scale");
+    }
+    try {
+      localStorage.setItem(FONT_SCALE_KEY, fontScale);
+    } catch {
+      /* ignore */
+    }
+  }, [fontScale]);
 
   // When following the system, react to OS changes live.
   useEffect(() => {
@@ -51,10 +101,20 @@ export function ThemeProvider({ children }) {
   }, [preference]);
 
   const setTheme = useCallback((pref) => setPreference(pref), []);
+  const setContrast_ = useCallback((c) => setContrast(c), []);
+  const setFontScale_ = useCallback((s) => setFontScale(s), []);
 
   const value = useMemo(
-    () => ({ preference, resolved, setTheme }),
-    [preference, resolved, setTheme]
+    () => ({
+      preference,
+      resolved,
+      setTheme,
+      contrast,
+      setContrast: setContrast_,
+      fontScale,
+      setFontScale: setFontScale_,
+    }),
+    [preference, resolved, setTheme, contrast, setContrast_, fontScale, setFontScale_]
   );
 
   return (

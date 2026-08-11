@@ -75,11 +75,35 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
 
   // Debounced "advance my read cursor on the server" for the active channel.
   // Coalesces bursts of incoming messages into a single request.
+  //
+  // Only marks read when the tab is actually visible. If a message arrives
+  // while the tab is hidden (user is on another tab/window), we deliberately do
+  // NOT advance the cursor - otherwise messages the user never saw would be
+  // silently marked read. Those get marked read on refocus instead (see below).
   const markReadSoon = useCallback(() => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      return;
+    }
     if (markReadTimer.current) clearTimeout(markReadTimer.current);
     markReadTimer.current = setTimeout(() => {
       api.markChannelRead(channel.id).catch(() => {});
     }, 400);
+  }, [channel.id]);
+
+  // Option A: when the tab regains visibility with this channel open, mark it
+  // read. The user is now looking at it, so anything that arrived while hidden
+  // is considered seen. (A tab-title unread count could later make this less
+  // eager, but for now refocus = read.) Also runs once on open when already
+  // visible, so opening a channel clears its unread promptly.
+  useEffect(() => {
+    function markIfVisible() {
+      if (document.visibilityState === "visible") {
+        api.markChannelRead(channel.id).catch(() => {});
+      }
+    }
+    markIfVisible(); // initial open, when visible
+    document.addEventListener("visibilitychange", markIfVisible);
+    return () => document.removeEventListener("visibilitychange", markIfVisible);
   }, [channel.id]);
 
   // Cancel any pending mark-read when switching channels/unmounting.
@@ -207,7 +231,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
     if (msg.parent_id) {
       // Fold this reply into its parent's count exactly once. Without the guard,
       // StrictMode's double-registered handler, a WS reconnect, or the sender
-      // also receiving its own event would each add another increment — which
+      // also receiving its own event would each add another increment - which
       // is how a single reply rendered as "4 replies".
       if (msg.id && countedReplyIds.current.has(msg.id)) return;
       if (msg.id) countedReplyIds.current.add(msg.id);
@@ -344,7 +368,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
 
   // guests cannot create channels but CAN send messages; posting requires
   // membership. While the member roster is still loading, don't prematurely
-  // show the "join" state — assume posting is allowed to avoid a flash, and let
+  // show the "join" state - assume posting is allowed to avoid a flash, and let
   // the real membership result settle it a moment later. Archived channels are
   // read-only for everyone.
   const canPost = !isArchived && (isDirect || members.isMember || members.loading);

@@ -33,13 +33,29 @@ export default function ChannelHeader({
             channel.peer ? (
               <Avatar user={channel.peer} size={22} online={!!peerOnline} />
             ) : (
-              <span className={`presence ${peerOnline ? "online" : ""}`} style={{ width: 11, height: 11 }} />
+              <span
+                className={`presence ${peerOnline ? "online" : ""}`}
+                style={{ width: 11, height: 11 }}
+                role="img"
+                aria-label={peerOnline ? "Online" : "Offline"}
+                title={peerOnline ? "Online" : "Offline"}
+              />
             )
           ) : (
             <Icon name={isPrivate ? "lock" : "hash"} size={18} />
           )}
         </span>
         <h2 className="channel-header-title">{title}</h2>
+        {isDirect && channel.peer && (channel.peer.status_emoji || channel.peer.status_text) && (
+          <span className="channel-header-status" title={channel.peer.status_text || ""}>
+            {channel.peer.status_emoji && (
+              <span className="channel-header-status-emoji">{channel.peer.status_emoji}</span>
+            )}
+            {channel.peer.status_text && (
+              <span className="channel-header-status-text">{channel.peer.status_text}</span>
+            )}
+          </span>
+        )}
         {isArchived && (
           <span className="channel-header-archived" title="This channel is archived">
             <Icon name="archive" size={13} /> Archived

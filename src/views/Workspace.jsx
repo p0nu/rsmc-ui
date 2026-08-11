@@ -4,6 +4,9 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { useRealtime } from "../hooks/useRealtime.js";
 import { useAppLinks } from "../hooks/useAppLinks.js";
+import { useVisibility } from "../hooks/useVisibility.js";
+import { loadClientPrefs } from "../lib/clientPrefs.js";
+import { playNotificationSound, showDesktopNotification } from "../lib/notify.js";
 
 import WorkspaceRail from "../components/sidebar/WorkspaceRail.jsx";
 import Sidebar from "../components/sidebar/Sidebar.jsx";
@@ -15,6 +18,7 @@ import BrowseChannelsModal from "../components/modals/BrowseChannelsModal.jsx";
 import QuickSwitcher from "../components/modals/QuickSwitcher.jsx";
 import ProfileModal from "../components/modals/ProfileModal.jsx";
 import SettingsModal from "../components/modals/SettingsModal.jsx";
+import SecurityModal from "../components/modals/SecurityModal.jsx";
 import { EmptyState } from "../components/common/Modal.jsx";
 import Icon from "../components/common/Icon.jsx";
 
@@ -45,6 +49,13 @@ export default function Workspace() {
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [jumpTarget, setJumpTarget] = useState(null); // { id, channel_id, parent_id? } | null
   const { links: appLinks, reload: reloadAppLinks } = useAppLinks();
+  const tabVisible = useVisibility();
+  // Mirror visibility in a ref so realtime handlers (closures) read the current
+  // value rather than a stale capture.
+  const tabVisibleRef = useRef(tabVisible);
+  useEffect(() => {
+    tabVisibleRef.current = tabVisible;
+  }, [tabVisible]);
 
   // Tracks message ids we've already accounted for in unread badges, so a
   // re-delivered event or a duplicate handler registration (e.g. after a
@@ -56,7 +67,7 @@ export default function Workspace() {
     [channels, activeId]
   );
 
-  // The Chat-button count is *derived* from the per-channel unread badges — it
+  // The Chat-button count is *derived* from the per-channel unread badges - it
   // is never tracked as an independent counter. This makes the two badges
   // impossible to disagree: when a channel's badge clears, the total recomputes
   // automatically. The channel we're actively viewing never contributes (its
@@ -64,14 +75,36 @@ export default function Workspace() {
   const unread = useMemo(() => {
     let total = 0;
     for (const c of channels) {
-      if (view === "chat" && c.id === activeId) continue;
+      // The active channel contributes 0 only while the tab is actually
+      // visible (the user is reading it). When the tab is hidden, unread there
+      // still counts - the user is away, so those messages are genuinely unseen.
+      if (view === "chat" && c.id === activeId && tabVisible) continue;
       // Muted channels still show their own dimmed badge, but deliberately
       // don't contribute to the global Chat count.
       if (c.muted) continue;
       total += c.unread_count || 0;
     }
     return total;
-  }, [channels, activeId, view]);
+  }, [channels, activeId, view, tabVisible]);
+
+  // Reflect unread in the browser tab title ("(3) RSMC"), so activity is
+  // visible even when the user is on a different tab. Restores the base title
+  // when there's nothing unread.
+  useEffect(() => {
+    const base = "RSMC";
+    document.title = unread > 0 ? `(${unread > 99 ? "99+" : unread}) ${base}` : base;
+  }, [unread]);
+
+  // When the tab regains focus while a channel is open, that channel is now
+  // being read (ChannelScreen advances the server cursor). Clear its sidebar
+  // badge to match, so the count accumulated while hidden doesn't linger.
+  useEffect(() => {
+    if (tabVisible && view === "chat" && activeId) {
+      setChannels((cs) =>
+        cs.map((c) => (c.id === activeId ? { ...c, unread_count: 0 } : c))
+      );
+    }
+  }, [tabVisible, view, activeId]);
 
   const hydrateDirect = useCallback(
     async (list) =>
@@ -162,7 +195,7 @@ export default function Workspace() {
     setPresence((p) => ({ ...p, [f.user_id]: { online: f.online, last_seen: f.last_seen } }));
   });
 
-  // A channel was archived/unarchived somewhere — reload so its visibility and
+  // A channel was archived/unarchived somewhere - reload so its visibility and
   // read-only state stay correct in the sidebar and header.
   useRealtime("channel_archived", () => {
     reload();
@@ -220,6 +253,12 @@ export default function Workspace() {
       thread_reply: "New reply",
     }[n?.kind] || "Notification";
     toast.info(kindLabel, notifPreview(n));
+    // Device-local presentation, gated by this device's client preferences.
+    // (Server-side prefs already decided whether this notification arrives; by
+    // here the user wants it, so we only decide how to present it locally.)
+    const cp = loadClientPrefs();
+    if (cp.sound) playNotificationSound();
+    if (cp.desktop) showDesktopNotification(kindLabel, notifPreview(n));
     // If this points to a channel/DM we don't have yet (first-ever DM, or being
     // added to a channel), pull the list so it appears with its unread badge.
     const haveChannel = chId && channels.some((c) => c.id === chId);
@@ -235,7 +274,12 @@ export default function Workspace() {
     const msg = f.message;
     const msgId = msg?.id;
     const fromMe = msg?.author?.id === user.id || msg?.user_id === user.id;
-    const isActive = f.channel_id === activeId && view === "chat";
+    // "Active" means the user is actually looking at this channel: it's open
+    // AND the tab is visible. While the tab is hidden, even the open channel
+    // accumulates unread, so the sidebar badge and tab title reflect real
+    // unseen activity. (On refocus, ChannelScreen marks it read and the count
+    // clears.)
+    const isActive = f.channel_id === activeId && view === "chat" && tabVisibleRef.current;
 
     // Guard against double-counting the same message (re-delivery / duplicate
     // handler after hot-reload). Only a real, not-yet-counted message bumps.
@@ -258,14 +302,14 @@ export default function Workspace() {
       next.splice(i, 1);
       return [updated, ...next];
     });
-    // A message in a channel/DM we don't know yet (first-ever DM) — pull the list.
+    // A message in a channel/DM we don't know yet (first-ever DM) - pull the list.
     if (!known && !fromMe) reload();
   });
 
   // When a channel is opened, clear its server-side notifications (mentions,
   // DMs, invites for that channel). The Chat-button count is derived from the
   // per-channel badges, so zeroing the badge in openChannel already updates the
-  // total instantly — there is nothing to reconcile here and so no race.
+  // total instantly - there is nothing to reconcile here and so no race.
   const clearChannelNotifications = useCallback(async (channelId) => {
     try {
       const unreadNotifs = await api.notifications(true, 100);
@@ -330,6 +374,7 @@ export default function Workspace() {
         channels={channels}
         loading={loadingChannels}
         activeId={view === "chat" ? activeId : null}
+        tabVisible={tabVisible}
         presence={presence}
         onOpenChannel={openChannel}
         onCreateChannel={() => setModal("create")}
@@ -418,9 +463,14 @@ export default function Workspace() {
         />
       )}
       {modal === "profile" && (
-        <ProfileModal onClose={() => setModal(null)} onOpenSettings={() => setModal("settings")} />
+        <ProfileModal
+          onClose={() => setModal(null)}
+          onOpenSettings={() => setModal("settings")}
+          onOpenSecurity={() => setModal("security")}
+        />
       )}
       {modal === "settings" && <SettingsModal onClose={() => setModal(null)} />}
+      {modal === "security" && <SecurityModal onClose={() => setModal(null)} />}
 
       {switcherOpen && (
         <QuickSwitcher

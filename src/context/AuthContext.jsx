@@ -88,6 +88,17 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     const auth = await api.login(email, password);
+    // If the instance requires a second factor, the server returns a challenge
+    // instead of tokens. Surface it so the caller can prompt for a TOTP code.
+    if (auth && auth.mfa_required) {
+      return { mfaRequired: true, mfaToken: auth.mfa_token };
+    }
+    establish(auth);
+    return { user: auth.user };
+  }
+  // Complete an MFA login challenge with a code from the authenticator app.
+  async function completeMfa(mfaToken, code) {
+    const auth = await api.mfaVerify(mfaToken, code);
     establish(auth);
     return auth.user;
   }
@@ -109,7 +120,7 @@ export function AuthProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ user, setUser, booting, login, signup, logout, rt: rt.current }),
+    () => ({ user, setUser, booting, login, completeMfa, signup, logout, rt: rt.current }),
     [user, booting]
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

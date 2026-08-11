@@ -8,6 +8,7 @@ export default function Sidebar({
   channels,
   loading,
   activeId,
+  tabVisible = true,
   presence,
   onOpenChannel,
   onCreateChannel,
@@ -48,6 +49,7 @@ export default function Sidebar({
                 key={ch.id}
                 channel={ch}
                 active={ch.id === activeId}
+                tabVisible={tabVisible}
                 onClick={() => onOpenChannel(ch.id)}
               />
             ))
@@ -63,7 +65,7 @@ export default function Sidebar({
           ) : (
             groups.directs.map((ch) => {
               const online = ch.peer ? presence[ch.peer.id]?.online : false;
-              const unread = ch.id !== activeId && ch.unread_count > 0 ? ch.unread_count : 0;
+              const unread = (ch.id !== activeId || !tabVisible) && ch.unread_count > 0 ? ch.unread_count : 0;
               const muted = !!ch.muted;
               return (
                 <button
@@ -110,10 +112,10 @@ function Section({ title, onAdd, addTitle, children }) {
   );
 }
 
-function ChannelRow({ channel, active, onClick }) {
+function ChannelRow({ channel, active, tabVisible = true, onClick }) {
   const isPrivate = channel.channel_type === "private";
   const isGroup = channel.channel_type === "group";
-  const unread = !active && channel.unread_count > 0 ? channel.unread_count : 0;
+  const unread = (!active || !tabVisible) && channel.unread_count > 0 ? channel.unread_count : 0;
   const muted = !!channel.muted;
   return (
     <button

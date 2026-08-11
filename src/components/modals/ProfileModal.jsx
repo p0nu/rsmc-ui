@@ -18,7 +18,7 @@ const STATUS_PRESETS = [
   { emoji: "🤒", text: "Out sick" },
 ];
 
-export default function ProfileModal({ onClose, onOpenSettings }) {
+export default function ProfileModal({ onClose, onOpenSettings, onOpenSecurity }) {
   const { user, setUser, logout } = useAuth();
   const toast = useToast();
   const [name, setName] = useState(user.display_name || "");
@@ -184,15 +184,26 @@ export default function ProfileModal({ onClose, onOpenSettings }) {
             </button>
           )}
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost btn-icon profile-settings-btn"
-          onClick={onOpenSettings}
-          title="Settings"
-          aria-label="Settings"
-        >
-          <Icon name="settings" size={20} />
-        </button>
+        <div className="profile-actions">
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon"
+            onClick={onOpenSecurity}
+            title="Security & Privacy"
+            aria-label="Security & Privacy"
+          >
+            <Icon name="lock" size={20} />
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-icon"
+            onClick={onOpenSettings}
+            title="Settings"
+            aria-label="Settings"
+          >
+            <Icon name="settings" size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="field">

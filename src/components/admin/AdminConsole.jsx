@@ -5,6 +5,7 @@ import AdminOverview from "./AdminOverview.jsx";
 import AdminMembers from "./AdminMembers.jsx";
 import AdminBackup from "./AdminBackup.jsx";
 import AdminIntegrations from "./AdminIntegrations.jsx";
+import AdminAudit from "./AdminAudit.jsx";
 import { EmptyState } from "../common/Modal.jsx";
 import Icon from "../common/Icon.jsx";
 
@@ -54,6 +55,9 @@ export default function AdminConsole({ onAppLinksChanged }) {
         >
           <Icon name="webhook" size={17} /> Integrations
         </button>
+        <button className={tab === "audit" ? "active" : ""} onClick={() => setTab("audit")}>
+          <Icon name="shield" size={17} /> Audit log
+        </button>
       </div>
 
       <div className="admin-body">
@@ -61,6 +65,7 @@ export default function AdminConsole({ onAppLinksChanged }) {
         {tab === "members" && <AdminMembers />}
         {tab === "backup" && <AdminBackup />}
         {tab === "integrations" && <AdminIntegrations onAppLinksChanged={onAppLinksChanged} />}
+        {tab === "audit" && <AdminAudit />}
       </div>
     </div>
   );

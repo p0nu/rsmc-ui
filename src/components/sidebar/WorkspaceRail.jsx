@@ -33,7 +33,7 @@ export default function WorkspaceRail({ user, view, unread, appLinks = [], onCha
         <button
           className="rail-avatar"
           onClick={onProfile}
-          title={connected ? "Your profile — connected" : `Your profile — connection: ${status}`}
+          title={connected ? "Your profile - connected" : `Your profile - connection: ${status}`}
           aria-label="Your profile"
         >
           <Avatar user={user} size={34} online={connected} />

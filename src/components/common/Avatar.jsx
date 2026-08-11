@@ -25,6 +25,9 @@ export default function Avatar({ user, size = 36, online, square = true }) {
       {online != null && (
         <span
           className={`avatar-presence presence sm ${online ? "online" : ""}`}
+          role="img"
+          aria-label={online ? "Online" : "Offline"}
+          title={online ? "Online" : "Offline"}
         />
       )}
     </span>

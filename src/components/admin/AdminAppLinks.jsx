@@ -164,7 +164,7 @@ export default function AdminAppLinks({ onChanged }) {
         <EmptyState
           icon={<Icon name="grid" size={40} />}
           title="No apps yet"
-          hint="Add a link to a tool your team uses — it'll show up in the Apps menu for everyone."
+          hint="Add a link to a tool your team uses - it'll show up in the Apps menu for everyone."
         />
       ) : (
         <div className="webhook-list">

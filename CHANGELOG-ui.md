@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.10.0] - security & privacy UI, accessibility, and unread surfacing
+
+### Added
+- **Security & Privacy modal.** A new surface (opened via the lock icon in the
+  profile) for the 0.10.0 account features: MFA enrollment with a scannable QR
+  code (via the zero-dependency `qrcode-generator`) plus manual-key fallback,
+  enable/disable; active-session list with per-device revoke and revoke-all; and
+  GDPR data export (JSON download) and account deletion.
+- **MFA login challenge.** When a sign-in returns a second-factor challenge, the
+  auth view prompts for the 6-digit code and completes login on success.
+- **Admin audit log tab.** A viewer in the admin console listing recorded actions
+  (when / action / actor / target / details) with an action filter.
+- **Notification settings.** Per-user server-side toggles (broadcast, thread
+  replies, DMs) plus client-side sound and desktop-notification controls.
+- **Accessibility cluster.** Colorblind-safe status palette (Okabe-Ito derived
+  hues, kept conventions, light and dark), redundant shape encoding for the
+  presence dot (filled = online, hollow ring = offline) with ARIA labels, a
+  high-contrast theme on an orthogonal axis, px-to-rem conversion, and a
+  Small/Default/Large font-scale control.
+- **Unread in the tab title.** The browser tab shows an unread count
+  ("(3) RSMC") so activity is visible from another tab.
+
+### Changed
+- **Status shown in one place.** A user's custom status now appears in the DM
+  header (live-updated) rather than being repeated next to every message.
+- **Active-channel unread respects tab visibility.** While the tab is hidden, the
+  open channel accumulates unread and shows its badge; on refocus it is marked
+  read and clears. Messages arriving while the tab is hidden are no longer
+  silently marked read.
+
+### Fixed
+- **Composer no longer clipped by the verification banner.** The channel screen
+  fills the space left after the banner instead of claiming full height, so the
+  message input and Send button stay visible for unverified users.
+- **UI text normalized.** Em/en dashes replaced with plain hyphens across the
+  source.
+
+### Notes
+- Requires **rsmc-engine v0.10.0** for MFA, sessions, GDPR, audit, and metrics.
+- Run `npm install` to pick up the new `qrcode-generator` dependency.
+
 ## [0.9.0] - email flow support and resilient realtime reconnect
 
 ### Added

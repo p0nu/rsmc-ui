@@ -1,5 +1,5 @@
 /* ===========================================================================
-   RSMC — design system
+   RSMC - design system
    ---------------------------------------------------------------------------
    A familiar, professional team-collaboration surface (Slack / Mattermost
    lineage) with its own identity: an indigo→violet brand, a calm light
@@ -45,16 +45,20 @@
   --line-strong: #cdd0dc;
 
   /* ---- status ---- */
-  --online: #2bb673;
-  --away: #e8a33d;
-  --busy: #e0556b;
-  --danger: #dc2626;
+  /* status - colorblind-safe hues (Okabe-Ito derived). Conventions are kept
+     (red = danger, green = success/online, amber = warn/away); only the exact
+     hues are chosen so red-vs-green stays distinguishable under the common
+     red-green deficiencies. */
+  --online: #009e73; /* bluish-green */
+  --away: #e69f00; /* orange */
+  --busy: #d55e00; /* vermillion */
+  --danger: #d55e00; /* vermillion (reads red, separates from green) */
   --danger-soft: #fef2f2;
-  --warn: #d97706;
+  --warn: #c26a00; /* deepened orange for text contrast */
   --warn-soft: #fffbeb;
-  --success: #059669;
+  --success: #009e73; /* bluish-green */
   --success-soft: #ecfdf5;
-  --info: #2563eb;
+  --info: #0072b2; /* blue */
 
   /* role accent colors */
   --role-admin: #7c3aed;
@@ -90,10 +94,23 @@ body,
 #root {
   height: 100%;
 }
+/* Root font-size drives every rem-based font size. The scaling control sets
+   data-font-scale on <html>; default (unset) resolves to 100% = 16px, so 1rem
+   stays 16px and all converted sizes render exactly as before. Only text
+   scales; spacing/layout remain in px and are unaffected. */
+html {
+  font-size: 100%;
+}
+html[data-font-scale="small"] {
+  font-size: 93.75%; /* 15px base */
+}
+html[data-font-scale="large"] {
+  font-size: 112.5%; /* 18px base */
+}
 body {
   margin: 0;
   font-family: var(--font);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.5;
   color: var(--ink);
   background: var(--bg-app);
@@ -177,7 +194,7 @@ code,
   border-radius: var(--r-md);
   background: var(--bg-surface);
   color: var(--ink);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   white-space: nowrap;
   transition: background 0.13s var(--ease), border-color 0.13s var(--ease),
@@ -233,12 +250,12 @@ code,
 .btn-sm {
   height: 32px;
   padding: 0 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .btn-lg {
   height: 44px;
   padding: 0 20px;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 .btn-icon {
   width: 38px;
@@ -260,12 +277,12 @@ code,
   gap: 6px;
 }
 .field-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--ink-2);
 }
 .field-hint {
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   color: var(--ink-3);
 }
 .input,
@@ -277,7 +294,7 @@ code,
   border: 1px solid var(--line-2);
   border-radius: var(--r-md);
   background: var(--bg-surface);
-  font-size: 14.5px;
+  font-size: 0.9062rem;
   color: var(--ink);
   transition: border-color 0.13s var(--ease), box-shadow 0.13s var(--ease);
 }
@@ -316,7 +333,7 @@ code,
   height: 20px;
   padding: 0 8px;
   border-radius: var(--r-full);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -357,21 +374,33 @@ code,
   border-radius: var(--r-full);
   background: var(--busy);
   color: #fff;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
 }
 
-/* presence dot */
+/* presence dot
+   State is encoded redundantly (not by color alone) so it is legible to
+   colorblind users and at very small sizes:
+     - online  = filled solid dot
+     - offline = hollow ring (surface-filled center, colored ring)
+   Callers should also pass an aria-label / title (see Avatar.jsx) for
+   assistive tech. */
 .presence {
   width: 10px;
   height: 10px;
   border-radius: var(--r-full);
-  background: var(--ink-4);
   flex-shrink: 0;
   border: 2px solid var(--bg-surface);
+  /* Offline default: a hollow ring. The inner box-shadow draws the ring in
+     the muted color while the fill stays the surface color, giving a shape
+     cue distinct from the filled online dot. */
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 2px var(--ink-4);
 }
 .presence.online {
+  /* Online: a fully filled dot (no inner ring). */
   background: var(--online);
+  box-shadow: none;
 }
 .presence.sm {
   width: 8px;
@@ -430,7 +459,7 @@ code,
   border: 1px solid var(--line-2);
   border-bottom-width: 2px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--ink-2);
 }
 
@@ -447,7 +476,7 @@ code,
   background: transparent;
   padding: 6px 14px;
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--ink-2);
   transition: background 0.12s, color 0.12s;
@@ -501,10 +530,10 @@ code,
 }
 .toast-title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .toast-msg {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.8);
   margin-top: 1px;
 }
@@ -561,11 +590,19 @@ code,
   --line-2: #333143;
   --line-strong: #423f54;
 
-  /* status — soft backgrounds need to be dark-tinted, not pale */
+  /* status - soft backgrounds need to be dark-tinted, not pale.
+     Foreground hues are brightened Okabe-Ito values so red-vs-green stays
+     distinguishable against dark surfaces while keeping conventions. */
   --danger-soft: #2e1a1d;
   --warn-soft: #2c2412;
   --success-soft: #14271f;
-  --online: #34d17f;
+  --online: #2ecc94; /* brightened bluish-green */
+  --away: #f0aa2a; /* brightened orange */
+  --busy: #f07a3a; /* brightened vermillion */
+  --danger: #f07a3a; /* brightened vermillion */
+  --warn: #e8a33d; /* brightened orange for text on dark */
+  --success: #2ecc94; /* brightened bluish-green */
+  --info: #4a9fe0; /* brightened blue */
 
   /* role pills */
   --role-admin: #c4a3ff;
@@ -595,4 +632,75 @@ code,
 /* color-scheme hint so native controls (scrollbars, inputs) match */
 [data-theme="dark"] {
   color-scheme: dark;
+}
+
+/* ===========================================================================
+   High-contrast axis (orthogonal to light/dark)
+   ---------------------------------------------------------------------------
+   Applied when <html data-contrast="high">. Layers on top of whichever
+   light/dark theme is active and only overrides the tokens that need more
+   separation: text is pushed toward the extremes, lines become strong and
+   opaque, muted greys are darkened so they still meet contrast, and focus
+   rings are thicker. Brand hues are kept but deepened where they act as text.
+   ========================================================================= */
+
+/* High-contrast on a light base. */
+[data-contrast="high"] {
+  --ink: #000000;
+  --ink-2: #1c1e26;
+  --ink-3: #3a3d4a; /* darkened: previously a low-contrast grey */
+  --ink-4: #55596a;
+
+  --line: #8a8fa0;
+  --line-2: #6d7284;
+  --line-strong: #4a4e5e;
+
+  --bg-app: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-subtle: #eceef3;
+  --bg-hover: #e4e7ef;
+  --bg-active: #dbe0fb;
+
+  --brand: #3a30d0;   /* deepened so brand-as-text clears contrast */
+  --brand-600: #3a30d0;
+  --brand-500: #4f46e5;
+
+  --danger: #b40f1c;
+  --warn: #9a5500;
+  --success: #04724a;
+  --info: #12409f;
+}
+
+/* High-contrast on a dark base. */
+[data-theme="dark"][data-contrast="high"] {
+  --ink: #ffffff;
+  --ink-2: #e6e5ef;
+  --ink-3: #c3c1d4;
+  --ink-4: #9d9ab2;
+
+  --line: #6f6c85;
+  --line-2: #857fa0;
+  --line-strong: #a29dbd;
+
+  --bg-app: #000000;
+  --bg-surface: #121119;
+  --bg-subtle: #1e1c2a;
+  --bg-hover: #262435;
+  --bg-active: #322e5c;
+
+  --brand: #a5b4fc;
+  --brand-600: #a5b4fc;
+  --brand-500: #c7d0ff;
+
+  --danger: #ff8a94;
+  --warn: #ffc766;
+  --success: #4fe0a3;
+  --info: #8fb4ff;
+}
+
+/* Thicker, higher-contrast focus ring in high-contrast mode. */
+[data-contrast="high"] :focus-visible {
+  outline-width: 3px;
+  outline-color: var(--ink);
+  outline-offset: 2px;
 }

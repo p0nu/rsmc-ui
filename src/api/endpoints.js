@@ -27,6 +27,27 @@ export const api = {
   meBoot: () => http.get("/users/me", { timeoutMs: 8000 }),
   updateMe: (payload) => http.patch("/users/me", payload),
   setStatus: (payload) => http.put("/users/me/status", payload),
+  // Per-user notification preferences (0.10.0). Partial: send only the toggles
+  // being changed. Returns the updated user with notification_prefs attached.
+  updateNotificationPrefs: (payload) =>
+    http.patch("/users/me/notification-prefs", payload),
+
+  // ---- MFA / TOTP (0.10.0) ----
+  // Enroll returns { secret_base32, otpauth_uri } for the QR code.
+  mfaEnroll: () => http.post("/users/me/mfa/enroll"),
+  mfaConfirm: (code) => http.post("/users/me/mfa/confirm", { code }),
+  mfaDisable: (code) => http.post("/users/me/mfa/disable", { code }),
+  // Exchanged when login returns { mfa_required, mfa_token }.
+  mfaVerify: (mfa_token, code) => http.post("/auth/mfa/verify", { mfa_token, code }),
+
+  // ---- active sessions (0.10.0) ----
+  listSessions: () => http.get("/users/me/sessions"),
+  revokeSession: (id) => http.del(`/users/me/sessions/${id}`),
+  revokeAllSessions: () => http.post("/users/me/sessions/revoke-all"),
+
+  // ---- GDPR (0.10.0) ----
+  exportMyData: () => http.get("/users/me/export"),
+  deleteMyAccount: () => http.del("/users/me"),
   uploadAvatar: (file) => {
     const fd = new FormData();
     fd.append("file", file);
@@ -132,6 +153,13 @@ export const api = {
   // ---- system (admin) ----
   systemInfo: () => http.get("/system/info"),
   systemStats: () => http.get("/system/stats"),
+  // Admin audit log (0.10.0): who did what (role changes, activate/deactivate,
+  // MFA, account deletion). Optional filters.
+  auditLog: ({ limit = 50, action } = {}) => {
+    const p = new URLSearchParams({ limit: String(limit) });
+    if (action) p.set("action", action);
+    return http.get(`/system/audit?${p}`);
+  },
   listBackups: () => http.get("/system/backups"),
   backupDatabase: (path) => http.post("/system/backup", path ? { path } : {}),
   restoreDatabase: (path) => http.post("/system/restore", { path, confirm: true }),

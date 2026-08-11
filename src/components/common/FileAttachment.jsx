@@ -83,7 +83,7 @@ export default function FileAttachment({ att }) {
       <span className="attach-file-meta">
         <span className="attach-file-name">{att.filename}</span>
         <span className="attach-file-size">
-          {state === "error" ? "Couldn't load — tap to retry" : fileSize(att.size_bytes)}
+          {state === "error" ? "Couldn't load - tap to retry" : fileSize(att.size_bytes)}
         </span>
       </span>
       <span className="attach-file-dl"><Icon name="download" size={16} /></span>
