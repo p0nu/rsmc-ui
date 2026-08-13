@@ -25,7 +25,7 @@ dark themes throughout.
 
 ## Quick start
 
-RSMC is a frontend; it needs the `rsmc-engine` backend running.
+RSMC is a frontend; it needs the [`rsmc-engine`](https://github.com/p0nu/rsmc-engine) backend running.
 
 **1. Start the backend.** RSMC needs a running `rsmc-engine` on
 `http://localhost:8080`. Start it however you like, the engine's own README
