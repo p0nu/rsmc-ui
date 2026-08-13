@@ -1,8 +1,9 @@
 # RSMC
 
-**RSMC** is a modern team-collaboration client — channels, direct messages,
-threads, file sharing, presence, notifications, and an admin console — built as a
-single-page React app on top of the [`rsmc-engine`](../rsmc-engine) backend.
+**RSMC** is a modern team-collaboration client, channels, direct messages,
+threads, file sharing, presence, notifications, two-factor auth, and an admin
+console, built as a single-page React app on top of the
+[`rsmc-engine`](../rsmc-engine) backend.
 
 <p align="center">
   <img src="docs/rsmc-admin.png" width="49%" alt="RSMC admin screen" />
@@ -11,21 +12,39 @@ single-page React app on top of the [`rsmc-engine`](../rsmc-engine) backend.
 
 ---
 
+> **Status:** v0.10.0 is feature-complete and in testing. It builds and runs, but
+> the newer flows (MFA, sessions, data export/delete) still need broad hands-on
+> testing across browsers and devices. Requires `rsmc-engine` v0.10.0.
+
+**Highlights:** a full chat surface (channels, DMs, threads, files, reactions,
+presence) plus a Cmd/Ctrl+K quick switcher and message search, a Security &
+Privacy area (two-factor auth, active sessions, GDPR export/delete), a five-tab
+admin console, notification preferences, and an accessibility cluster
+(colorblind-safe palette, high-contrast mode, adjustable text size). Light and
+dark themes throughout.
+
 ## Quick start
 
 RSMC is a frontend; it needs the `rsmc-engine` backend running.
 
-**1. Start the backend** (from the `rsmc-engine` directory):
+**1. Start the backend.** RSMC needs a running `rsmc-engine` on
+`http://localhost:8080`. Start it however you like, the engine's own README
+covers the prebuilt binary, Docker Compose, and from-source options. The quickest
+is Docker Compose from the `rsmc-engine` directory:
 
 ```bash
 docker compose up --build
 # engine listens on http://localhost:8080
 ```
 
-**2. Start RSMC:**
+**2. Get RSMC and start it.**
+
+You need [Node.js](https://nodejs.org/en/download) (any current LTS release) for
+`npm`. Then clone the repo, install dependencies, and start the dev server:
 
 ```bash
-cd rsmc
+git clone https://github.com/p0nu/rsmc-ui.git
+cd rsmc-ui
 npm install
 npm run dev
 # open http://localhost:5173
@@ -80,7 +99,7 @@ instead of hiding it. There are two independent layers:
 
 So a second user who is a plain **member** of the workspace and a plain
 **member** of a channel genuinely cannot add others to that channel or change
-roles — that requires being the channel owner/admin or a workspace admin. In
+roles - that requires being the channel owner/admin or a workspace admin. In
 RSMC:
 
 - The **Members** panel shows an explanatory note and hides the add/remove
@@ -94,24 +113,27 @@ roles** → change their role, or have a channel owner add them and promote them
 
 ### Admin console
 
-The admin console (visible only to workspace admins) has three tabs:
+The admin console (visible only to workspace admins) has five tabs:
 
-- **Members & roles** — search users, change system roles, deactivate and reactivate accounts. Deactivating ends the user's active sessions and blocks sign-in; reactivating restores access. You can't change your own role or deactivate yourself (prevents self-lockout).
-- **Integrations** — create and manage outgoing webhooks (signed HTTP callbacks
-  on message events), with a one-time signing-secret reveal.
-  **Apps** — admin-curated quick links to your team's tools (GitHub, GitLab, etc.), one click away in the sidebar.
-- **System** — create database backups and restore from them. You can leave the
-  path blank for an auto-named, timestamped dump, or specify a filename/path
-  (constrained to the server's backups directory). Restore is destructive and
-  asks for explicit confirmation. This requires the PostgreSQL client tools on
-  the backend, which the provided Docker image installs.
+- **Overview:** at-a-glance workspace stats (users, channels, messages) and instance health.
+- **Members & roles:** search users, change system roles, deactivate and reactivate accounts. Deactivating ends the user's active sessions and blocks sign-in; reactivating restores access. You can't change your own role or deactivate yourself (prevents self-lockout).
+- **Backup & restore:** create database backups and restore from them. Leave the path blank for an auto-named, timestamped dump, or specify a filename/path (constrained to the server's backups directory). Restore is destructive and asks for explicit confirmation. Requires the PostgreSQL client tools on the backend, which the provided Docker image installs.
+- **Integrations:** create and manage outgoing webhooks (signed HTTP callbacks on message events), with a one-time signing-secret reveal. **Apps** are admin-curated quick links to your team's tools (GitHub, GitLab, etc.), one click away in the sidebar.
+- **Audit log:** an append-only record of security-relevant actions (role changes, activate/deactivate, MFA enable/disable, account deletion) with an action filter.
 
-### Settings & themes
+### Settings, security, and themes
 
-Click your avatar in the bottom-left rail → the gear icon opens **Settings**.
-Appearance offers **Light**, **Dark**, and **System** (follows your OS) themes;
-your choice is remembered on the device. The Settings panel is built to grow —
-notifications, language, and accessibility options slot in as new sections.
+Click your avatar in the bottom-left rail. The **gear** icon opens **Settings**;
+the **lock** icon opens **Security & Privacy**.
+
+- **Settings** covers Appearance (Light / Dark / System theme, remembered per
+  device), Notifications (which events notify you, plus sound and desktop
+  alerts), and Accessibility (a high-contrast mode, adjustable text size, and a
+  colorblind-safe palette that is on by default).
+- **Security & Privacy** is where a user enables two-factor auth (scan a QR code
+  with an authenticator app, or enter the key by hand), reviews and revokes their
+  active sessions, and exercises data rights, export a copy of their data, or
+  delete their account.
 
 ---
 
@@ -124,25 +146,34 @@ src/
     endpoints.js     typed map of every rsmc-engine REST endpoint
     realtime.js      WebSocket client: reconnect/backoff, re-subscribe, heartbeat
   app/
-    App.jsx          providers + gate (boot → auth → workspace)
+    App.jsx          providers + gate (boot -> auth -> workspace)
   context/
-    AuthContext.jsx  session, token storage, /users/me boot, socket lifecycle
+    AuthContext.jsx  session, token storage, /users/me boot, socket lifecycle,
+                     MFA login challenge
+    ThemeContext.jsx theme, high-contrast, font scale, colorblind-safe palette
     ToastContext.jsx lightweight toast notifications
   hooks/
     useRealtime.js   subscribe to socket events / connection status
     useChannelMembers.js  member list + derived channel-admin rights
+    useVisibility.js tab-visibility signal (drives unread while backgrounded)
   lib/
     permissions.js   mirrors the engine's authz rules (single source of truth for the UI)
+    clientPrefs.js   per-device notification preferences
+    notify.js        sound + desktop notifications
     format.js        names, timestamps, file sizes, mentions, avatar colors
   components/
     common/          Icon, Avatar, Modal/Loading/EmptyState/RoleBadge
     sidebar/         WorkspaceRail, Sidebar
     chat/            ChannelScreen, Header, MessageList, Message, Composer,
                      ThreadPanel, MembersPanel, FilesPanel
-    modals/          CreateChannel, NewDirect, BrowseChannels, Profile, ChannelSettings
-    admin/           AdminConsole, AdminMembers, AdminWebhooks
+    modals/          CreateChannel, NewDirect, BrowseChannels, ChannelSettings,
+                     Profile, Settings, Security, QuickSwitcher (Cmd/Ctrl+K),
+                     Search
+    admin/           AdminConsole (tab host), AdminOverview, AdminMembers,
+                     AdminIntegrations, AdminWebhooks, AdminAppLinks,
+                     AdminSystem, AdminBackup, AdminAudit
   views/
-    AuthView.jsx     login / signup
+    AuthView.jsx     login / signup / MFA challenge
     Workspace.jsx    main coordinator (channels, presence, unread, modals)
   styles/
     base.css         design tokens + primitives (buttons, fields, badges, toasts)
@@ -160,7 +191,7 @@ src/
 - **Realtime is resilient.** The socket reconnects with backoff, re-subscribes
   to active channels, and sends heartbeats; the connection status is shown as a
   dot on the workspace rail.
-- **API response shapes match the engine exactly** — status replies are
+- **API response shapes match the engine exactly** - status replies are
   `{ ok: true }`, unread is `{ unread: N }`, signup requires `display_name`, etc.
 
 ---
@@ -196,5 +227,5 @@ all runtime data from the backend.)
 ## Tech
 
 React 18 · Vite 5 · plain CSS (no UI framework) · the browser `fetch` and
-`WebSocket` APIs. No global state library — React context is enough for this
+`WebSocket` APIs. No global state library - React context is enough for this
 surface.
