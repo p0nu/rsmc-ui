@@ -45,19 +45,28 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
   const lastTyping = useRef(0);
   const inputRef = useRef(null);
 
+  // Grow the textarea to fit its content (capped), or reset it to a single row.
+  // Height is applied imperatively, so it must be reset explicitly whenever the
+  // text is cleared programmatically (send, schedule, draft clear) - clearing
+  // state alone does not shrink the element.
+  const fitHeight = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 220) + "px";
+  }, []);
+  const resetHeight = useCallback(() => {
+    const el = inputRef.current;
+    if (el) el.style.height = "auto";
+  }, []);
+
   // Drafts: only the main channel composer persists (not thread replies).
   const { save: saveDraft, clear: clearDraft } = useDraft(channelId, {
     enabled: !parentId,
     onRestore: (content) => {
       setText(content);
       // Resize the textarea to fit restored content on the next frame.
-      requestAnimationFrame(() => {
-        const el = inputRef.current;
-        if (el) {
-          el.style.height = "auto";
-          el.style.height = Math.min(el.scrollHeight, 220) + "px";
-        }
-      });
+      requestAnimationFrame(() => fitHeight());
     },
   });
 
@@ -66,6 +75,35 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
   const [mentionResults, setMentionResults] = useState([]);
   const [mentionIdx, setMentionIdx] = useState(0);
   const mentionTimer = useRef(null);
+
+  // Quick emoji for the composer popover. A curated common set (no dependency);
+  // the OS picker still covers everything beyond this.
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const QUICK_EMOJI = [
+    "😀", "😄", "😁", "😅", "😂", "🙂", "😉", "😊",
+    "😍", "😘", "😎", "🤔", "😐", "😴", "😢", "😭",
+    "😤", "😡", "👍", "👎", "👏", "🙌", "🙏", "💪",
+    "🔥", "🎉", "✅", "❌", "⚠️", "👀", "💯", "❤️",
+  ];
+
+  // Insert text at the cursor (used by the emoji popover), mirroring the
+  // mention-insertion approach so caret position and height stay correct.
+  function insertAtCursor(snippet) {
+    const el = inputRef.current;
+    const start = el?.selectionStart ?? text.length;
+    const end = el?.selectionEnd ?? text.length;
+    const next = text.slice(0, start) + snippet + text.slice(end);
+    setText(next);
+    saveDraft(next);
+    requestAnimationFrame(() => {
+      const pos = start + snippet.length;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(pos, pos);
+      }
+      fitHeight();
+    });
+  }
 
   // Detect an in-progress "@query" immediately before the caret.
   const detectMention = useCallback((value, caret) => {
@@ -107,8 +145,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
     if (sendError) setSendError(null);
     emitTyping();
     saveDraft(value);
-    e.target.style.height = "auto";
-    e.target.style.height = Math.min(e.target.scrollHeight, 220) + "px";
+    fitHeight();
     const m = detectMention(value, e.target.selectionStart);
     setMention(m);
     if (m) runMentionSearch(m.query);
@@ -129,8 +166,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
       if (el) {
         el.focus();
         el.setSelectionRange(pos, pos);
-        el.style.height = "auto";
-        el.style.height = Math.min(el.scrollHeight, 220) + "px";
+        fitHeight();
       }
     });
   }
@@ -174,6 +210,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
       setText("");
       setAttachments([]);
       clearDraft();
+      resetHeight();
       onSent?.(msg);
     } catch (err) {
       // Keep the composer contents so the user can retry without retyping.
@@ -212,6 +249,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
       });
       setText("");
       clearDraft();
+      resetHeight();
       setScheduleOpen(false);
       setCustomOpen(false);
       setCustomValue("");
@@ -310,7 +348,6 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               send();
-              e.target.style.height = "auto";
             }
           }}
         />
@@ -351,6 +388,42 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
           {uploading ? <span className="spinner" /> : <Icon name="paperclip" size={18} />}
         </button>
         <input ref={fileRef} type="file" multiple hidden onChange={pickFiles} />
+
+        <div className="composer-emoji-wrap">
+          <button
+            type="button"
+            className={`composer-tool ${emojiOpen ? "active" : ""}`}
+            onClick={() => {
+              setEmojiOpen((v) => !v);
+              setScheduleOpen(false);
+            }}
+            title="Emoji"
+            aria-label="Insert emoji"
+          >
+            <Icon name="smile" size={18} />
+          </button>
+          {emojiOpen && (
+            <>
+              <div className="composer-emoji-backdrop" onClick={() => setEmojiOpen(false)} />
+              <div className="composer-emoji-pop" role="menu">
+                {QUICK_EMOJI.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    className="composer-emoji-opt"
+                    onClick={() => {
+                      insertAtCursor(e);
+                      setEmojiOpen(false);
+                    }}
+                    title={e}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Scheduling is offered for normal channel messages, not thread replies. */}
         {!parentId && (

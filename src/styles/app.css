@@ -3004,6 +3004,43 @@
   position: relative;
   display: inline-flex;
 }
+/* ---- Emoji popover in Composer ------------------------------------------ */
+.composer-emoji-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.composer-emoji-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.composer-emoji-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 41;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  width: 288px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop, var(--shadow-lg));
+  padding: 8px;
+}
+.composer-emoji-opt {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 5px;
+  border-radius: var(--r-md);
+}
+.composer-emoji-opt:hover {
+  background: var(--bg-subtle);
+}
 .composer-schedule-backdrop {
   position: fixed;
   inset: 0;

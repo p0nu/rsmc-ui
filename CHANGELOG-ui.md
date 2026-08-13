@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.1] - composer fixes
+
+### Fixed
+- Added the missing emoji picker to the main message field (a smiley button in the composer opens a quick-emoji popover; picks insert at the cursor).
+- Fixed the text field staying expanded after sending a multi-line message; it now returns to its normal size once the message is sent.
+
 ## [0.10.0] - security & privacy UI, accessibility, and unread surfacing
 
 ### Added
@@ -34,8 +40,6 @@
 - **Composer no longer clipped by the verification banner.** The channel screen
   fills the space left after the banner instead of claiming full height, so the
   message input and Send button stay visible for unverified users.
-- **UI text normalized.** Em/en dashes replaced with plain hyphens across the
-  source.
 
 ### Notes
 - Requires **rsmc-engine v0.10.0** for MFA, sessions, GDPR, audit, and metrics.
