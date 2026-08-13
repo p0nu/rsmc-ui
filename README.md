@@ -6,8 +6,11 @@ console, built as a single-page React app on top of the
 [`rsmc-engine`](../rsmc-engine) backend.
 
 <p align="center">
-  <img src="docs/rsmc-admin.png" width="49%" alt="RSMC admin screen" />
-  <img src="docs/rsmc-light.png" width="49%" alt="RSMC main screen" />
+  <img src="docs/rsmc-admin-1.png" width="49%" alt="RSMC admin console" />
+  <img src="docs/rsmc-admin-2.png" width="49%" alt="RSMC admin audit log" />
+  <br/>
+  <img src="docs/rsmc-user-1.png" width="49%" alt="RSMC channel view" />
+  <img src="docs/rsmc-user-2.png" width="49%" alt="RSMC direct messages" />
 </p>
 
 ---
