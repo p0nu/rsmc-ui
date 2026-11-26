@@ -12,6 +12,7 @@ export default function FileAttachment({ att }) {
   const isImage = (att.content_type || "").startsWith("image/");
   const [objUrl, setObjUrl] = useState(null);
   const [state, setState] = useState("idle"); // idle | loading | ready | error
+  const [lightbox, setLightbox] = useState(false);
   const urlRef = useRef(null);
 
   // Eagerly load images for inline preview; non-images load on demand (download).
@@ -38,6 +39,14 @@ export default function FileAttachment({ att }) {
     };
   }, [att.id, isImage]);
 
+  // Close the lightbox on Escape.
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => e.key === "Escape" && setLightbox(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
+
   async function download() {
     try {
       const blob = await api.fileBlob(att.id);
@@ -59,9 +68,34 @@ export default function FileAttachment({ att }) {
     return (
       <div className="attach-image">
         {state === "ready" && objUrl ? (
-          <a href={objUrl} target="_blank" rel="noreferrer">
-            <img src={objUrl} alt={att.filename} loading="lazy" />
-          </a>
+          <>
+            <button
+              type="button"
+              className="attach-image-btn"
+              onClick={() => setLightbox(true)}
+              title="Click to enlarge"
+            >
+              <img src={objUrl} alt={att.filename} loading="lazy" />
+            </button>
+            {lightbox && (
+              <div className="lightbox" onClick={() => setLightbox(false)} role="dialog" aria-modal="true">
+                <button
+                  type="button"
+                  className="lightbox-close"
+                  onClick={() => setLightbox(false)}
+                  aria-label="Close"
+                >
+                  <Icon name="x" size={22} />
+                </button>
+                <img
+                  src={objUrl}
+                  alt={att.filename}
+                  className="lightbox-img"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
+          </>
         ) : state === "error" ? (
           <div className="attach-image-fallback">
             <Icon name="alert" size={18} />

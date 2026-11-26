@@ -64,7 +64,14 @@ export default function AuthView() {
         toast.success("Welcome to RSMC", "Your account is ready.");
       }
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : "Something went wrong. Try again.";
+      let msg = err instanceof ApiError ? err.message : "Something went wrong. Try again.";
+      // A failed login returns one generic 401 whether the email is unknown or
+      // the password is wrong (deliberate, to avoid revealing which accounts
+      // exist). Show a clear, equally generic message instead of the engine's
+      // internal "authentication required" phrasing.
+      if (mode === "login" && err instanceof ApiError && err.status === 401) {
+        msg = "Invalid email or password.";
+      }
       toast.error(
         mode === "login" ? "Couldn't sign in" :
         mode === "forgot" ? "Couldn't send reset link" :

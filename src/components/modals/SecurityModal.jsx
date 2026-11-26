@@ -135,14 +135,20 @@ function MfaSection({ user, setUser, toast }) {
 // --- Active sessions ---
 function SessionsSection({ toast }) {
   const [sessions, setSessions] = useState(null);
+  const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
 
   async function load() {
+    setError(false);
     try {
       const res = await api.listSessions();
       setSessions(res.sessions || []);
     } catch {
-      setSessions([]);
+      // A failed fetch is NOT the same as "no sessions" - surface it as an
+      // error with a retry, rather than silently showing "No active sessions"
+      // (which wrongly implies the user is signed in nowhere).
+      setSessions(null);
+      setError(true);
     }
   }
   useEffect(() => { load(); }, []);
@@ -184,7 +190,12 @@ function SessionsSection({ toast }) {
         </div>
       </div>
 
-      {sessions === null ? (
+      {error ? (
+        <p className="muted">
+          Couldn't load sessions.{" "}
+          <button className="btn btn-ghost btn-sm" onClick={load}>Retry</button>
+        </p>
+      ) : sessions === null ? (
         <p className="muted">Loading...</p>
       ) : sessions.length === 0 ? (
         <p className="muted">No active sessions.</p>

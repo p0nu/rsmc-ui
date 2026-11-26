@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useToast } from "../../context/ToastContext.jsx";
 import { api } from "../../api/endpoints.js";
 import { clockTime, displayName } from "../../lib/format.js";
 import Avatar from "../common/Avatar.jsx";
@@ -18,12 +19,23 @@ export default function Message({
   onPinChanged,
 }) {
   const { user } = useAuth();
+  const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.content);
   const [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState(false);
 
   const QUICK_EMOJI = ["👍", "❤️", "😂", "🎉", "👀", "✅"];
+
+  async function copyText() {
+    if (!message.content) return;
+    try {
+      await navigator.clipboard.writeText(message.content);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Couldn't copy", "Your browser blocked clipboard access.");
+    }
+  }
 
   async function toggleReaction(emoji) {
     setPicker(false);
@@ -75,6 +87,16 @@ export default function Message({
     if (!confirm("Delete this message? This can't be undone.")) return;
     await api.deleteMessage(message.id);
     onDeleted?.(message.id);
+  }
+
+  // System messages (e.g. "<user> joined the channel") render as a quiet,
+  // centered line with no author, avatar, actions, or reactions.
+  if (message.message_type === "system") {
+    return (
+      <div id={`msg-${message.id}`} className="msg-system">
+        <span className="msg-system-text">{message.content}</span>
+      </div>
+    );
   }
 
   return (
@@ -190,6 +212,11 @@ export default function Message({
           <button className="msg-tool" title="Reply in thread" onClick={() => onOpenThread?.(message)}>
             <Icon name="thread" size={16} />
           </button>
+          {message.content && (
+            <button className="msg-tool" title="Copy text" onClick={copyText}>
+              <Icon name="copy" size={16} />
+            </button>
+          )}
           {mine && (
             <button className="msg-tool" title="Edit" onClick={() => setEditing(true)}>
               <Icon name="edit" size={16} />

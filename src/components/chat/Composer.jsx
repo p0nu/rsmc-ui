@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { api } from "../../api/endpoints.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useToast } from "../../context/ToastContext.jsx";
@@ -30,7 +30,7 @@ function schedulePresets() {
   ];
 }
 
-export default function Composer({ channelId, parentId = null, placeholder, onSent, onScheduled, disabled, disabledReason }) {
+export default function Composer({ channelId, parentId = null, placeholder, onSent, onScheduled, disabled, disabledReason, uploadRef }) {
   const { rt } = useAuth();
   const toast = useToast();
   const [text, setText] = useState("");
@@ -44,6 +44,25 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
   const fileRef = useRef(null);
   const lastTyping = useRef(0);
   const inputRef = useRef(null);
+
+  // Stop the browser's default "open the dropped file in a new tab" behavior
+  // across the whole window. Without this, a file dropped anywhere outside the
+  // composer's own drop target navigates away / opens the file. Our explicit
+  // drop zone (below) still handles drops meant for upload.
+  useEffect(() => {
+    const prevent = (e) => {
+      // Only guard file drags, not text/element drags within the app.
+      if (e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files")) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("dragover", prevent);
+    window.addEventListener("drop", prevent);
+    return () => {
+      window.removeEventListener("dragover", prevent);
+      window.removeEventListener("drop", prevent);
+    };
+  }, []);
 
   // Grow the textarea to fit its content (capped), or reset it to a single row.
   // Height is applied imperatively, so it must be reset explicitly whenever the
@@ -179,13 +198,13 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
     }
   }, [rt, channelId]);
 
-  async function pickFiles(e) {
-    const files = Array.from(e.target.files || []);
-    e.target.value = "";
-    if (!files.length) return;
+  // Shared upload path for the picker, paste, and drag-and-drop.
+  async function uploadFiles(files) {
+    const list = Array.from(files || []);
+    if (!list.length) return;
     setUploading(true);
     try {
-      for (const file of files) {
+      for (const file of list) {
         const res = await api.uploadFile(file);
         setAttachments((a) => [...a, res]);
       }
@@ -195,6 +214,33 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
       setUploading(false);
     }
   }
+
+  // Expose the upload path to the parent so a channel-wide drop zone can use it.
+  if (uploadRef) uploadRef.current = uploadFiles;
+
+  function pickFiles(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    uploadFiles(files);
+  }
+
+  // Paste an image (e.g. a screenshot) straight into the composer to upload it.
+  function onPaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files = [];
+    for (const it of items) {
+      if (it.kind === "file") {
+        const f = it.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length) {
+      e.preventDefault(); // don't also paste the image as text/markup
+      uploadFiles(files);
+    }
+  }
+
 
   async function send() {
     const content = text.trim();
@@ -321,6 +367,7 @@ export default function Composer({ channelId, parentId = null, placeholder, onSe
           placeholder={placeholder}
           rows={1}
           onChange={onTextChange}
+          onPaste={onPaste}
           onKeyDown={(e) => {
             if (mention && mentionResults.length > 0) {
               if (e.key === "ArrowDown") {

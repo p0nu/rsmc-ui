@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.11.0] - uploads, lightbox, join/leave messages, and quality-of-life
+
+### Added
+- **Drag-and-drop and paste to upload.** Drop files anywhere over the channel
+  (a "Drop files to upload" overlay appears), or paste an image straight into
+  the composer, to attach them. Files dropped outside the app no longer open in
+  a new tab.
+- **Image lightbox.** Clicking an inline image opens it full-screen in an overlay
+  (click or Escape to close) instead of opening a new browser tab.
+- **Copy message.** A copy action in the message hover toolbar copies the message
+  text to the clipboard.
+- **Join/leave messages.** System messages ("`<name>` joined the channel", "left",
+  or "was removed") render as a quiet, centered line with no author or actions.
+
+### Fixed
+- **Active sessions error state.** A failed load of the sessions list now shows a
+  clear error with a Retry action, instead of silently reading as "No active
+  sessions".
+- **Sign-in screen theming.** The auth screen now uses the app's base surface and
+  text colors so it stays consistent with the rest of the product, including in
+  dark mode.
+
 ## [0.10.1] - composer fixes
 
 ### Fixed

@@ -48,6 +48,9 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
 
   const [messages, setMessages] = useState([]);
   const [cursor, setCursor] = useState(null);
+  const [dropActive, setDropActive] = useState(false);
+  const uploadRef = useRef(null);
+  const dragDepth = useRef(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [typing, setTyping] = useState({});
@@ -157,7 +160,56 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
   }, [channel.id]);
 
   useEffect(() => {
-    if (!loading) requestAnimationFrame(() => scrollToBottom("auto"));
+    if (loading) return;
+    const el = scrollRef.current;
+
+    // Pin to the bottom on first paint. Images and other attachments have no
+    // height yet at this point, so a single scroll lands short once they load
+    // and push content down. Re-pin as each image finishes decoding, and again
+    // after a couple of short delays to catch layout that settles without a
+    // load event (web fonts, async-sized embeds).
+    //
+    // The re-pin window is cancelled the moment the user scrolls by their own
+    // action (wheel / touch / keyboard), so we never fight someone who has
+    // started reading older messages. We deliberately do NOT gate on atBottom
+    // here: an image loading pushes content down and momentarily leaves us far
+    // from the bottom, which would otherwise read as "user scrolled up" and
+    // kill the very re-pin that corrects it.
+    let cancelled = false;
+    const pin = () => {
+      if (!cancelled) scrollToBottom("auto");
+    };
+    requestAnimationFrame(pin);
+
+    const cancel = () => {
+      cancelled = true;
+    };
+    const onMediaLoad = (e) => {
+      if (e.target && (e.target.tagName === "IMG" || e.target.tagName === "VIDEO")) pin();
+    };
+    // `load` does not bubble, so listen in the capture phase on the container.
+    el?.addEventListener("load", onMediaLoad, true);
+    el?.addEventListener("wheel", cancel, { passive: true });
+    el?.addEventListener("touchmove", cancel, { passive: true });
+    el?.addEventListener("keydown", cancel);
+
+    const t1 = setTimeout(pin, 150);
+    const t2 = setTimeout(pin, 500);
+    // Stop listening for media loads after the content has had time to settle,
+    // so a much later lazy image can't jerk the view while the user is reading.
+    const t3 = setTimeout(() => {
+      cancelled = true;
+    }, 2000);
+
+    return () => {
+      el?.removeEventListener("load", onMediaLoad, true);
+      el?.removeEventListener("wheel", cancel);
+      el?.removeEventListener("touchmove", cancel);
+      el?.removeEventListener("keydown", cancel);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
   }, [loading]);
 
   function scrollToBottom(behavior = "smooth") {
@@ -376,8 +428,48 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
     ? "This channel is archived and read-only."
     : "Join this channel to send messages.";
 
+  function hasFiles(e) {
+    return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+  }
+  function onDragEnter(e) {
+    if (!hasFiles(e) || !canPost) return;
+    e.preventDefault();
+    dragDepth.current += 1;
+    setDropActive(true);
+  }
+  function onDragOver(e) {
+    if (hasFiles(e) && canPost) e.preventDefault();
+  }
+  function onDragLeave(e) {
+    if (!hasFiles(e)) return;
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDropActive(false);
+  }
+  function onDrop(e) {
+    if (!hasFiles(e) || !canPost) return;
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDropActive(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length && uploadRef.current) uploadRef.current(files);
+  }
+
   return (
-    <div className="channel-screen">
+    <div
+      className="channel-screen"
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      {dropActive && (
+        <div className="channel-dropzone">
+          <div className="channel-dropzone-inner">
+            <Icon name="paperclip" size={28} />
+            <span>Drop files to upload</span>
+          </div>
+        </div>
+      )}
       <ChannelHeader
         channel={channel}
         presence={presence}
@@ -434,6 +526,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
               onSent={handleSent}
               disabled={!canPost}
               disabledReason={composerDisabledReason}
+              uploadRef={uploadRef}
             />
           </div>
         </div>
