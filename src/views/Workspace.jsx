@@ -31,6 +31,8 @@ export default function Workspace() {
   const [activeId, setActiveId] = useState(null);
   const [view, setView] = useState("chat"); // 'chat' | 'admin'
   const [presence, setPresence] = useState({});
+  // Instance name-display policy for channel message authors: "full_name" | "username".
+  const [nameMode, setNameMode] = useState("full_name");
   const [modal, setModal] = useState(null); // 'create' | 'direct' | 'browse' | 'profile'
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
@@ -140,6 +142,23 @@ export default function Workspace() {
   useEffect(() => {
     reload();
   }, [reload]);
+
+  // Load the instance name-display policy once, so channel messages render
+  // authors by full name or username per the admin's choice.
+  useEffect(() => {
+    let alive = true;
+    api
+      .getSettings()
+      .then((s) => {
+        if (alive && s?.name_display) setNameMode(s.name_display);
+      })
+      .catch(() => {
+        /* keep the default (full_name) if settings can't be loaded */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Subscribe to *every* channel the user belongs to (not just the active one),
   // so message_created events arrive for background channels and their sidebar
@@ -358,6 +377,18 @@ export default function Workspace() {
     openChannel(ch.id);
   }
 
+  // Start (or open) a DM with a user, e.g. from the profile popover's Message
+  // button. createDirect is idempotent server-side: it returns the existing DM
+  // channel if one already exists.
+  async function startDirectWith(u) {
+    try {
+      const ch = await api.createDirect(u.id);
+      await afterStartDirect({ ...ch, peer: u });
+    } catch (e) {
+      toast.error("Couldn't start conversation", e?.message || "Try again.");
+    }
+  }
+
   return (
     <div className={`workspace ${mobileSidebar ? "show-sidebar" : ""}`}>
       <WorkspaceRail
@@ -410,6 +441,7 @@ export default function Workspace() {
             key={active.id}
             channel={active}
             presence={presence}
+            nameMode={nameMode}
             jumpTarget={jumpTarget}
             onJumpHandled={() => setJumpTarget(null)}
             onJumpToMessage={jumpToMessage}
@@ -419,6 +451,7 @@ export default function Workspace() {
               reload();
             }}
             onToggleSidebar={() => setMobileSidebar((s) => !s)}
+            onStartDirect={startDirectWith}
           />
         ) : (
           <div className="main-empty">

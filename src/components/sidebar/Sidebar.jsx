@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { channelName, displayName } from "../../lib/format.js";
 import Avatar from "../common/Avatar.jsx";
 import Icon from "../common/Icon.jsx";
+import { Modal } from "../common/Modal.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useToast } from "../../context/ToastContext.jsx";
 
 export default function Sidebar({
   channels,
@@ -24,10 +26,7 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
       <header className="sidebar-header">
-        <h1 className="sidebar-workspace">RSMC</h1>
-        <button className="btn btn-ghost btn-icon btn-sm" onClick={onBrowse} title="Browse channels">
-          <Icon name="search" size={17} />
-        </button>
+        <WorkspaceMenu onBrowse={onBrowse} />
       </header>
 
       <div className="sidebar-scroll">
@@ -89,6 +88,93 @@ export default function Sidebar({
         </Section>
       </div>
     </aside>
+  );
+}
+
+// The RSMC wordmark doubles as a workspace menu button. It replaces the old
+// standalone search icon in the header, which was easy to confuse with the
+// message-search icon elsewhere; "Browse channels" now lives here instead, so
+// there is one unambiguous search.
+function WorkspaceMenu({ onBrowse }) {
+  const [open, setOpen] = useState(false);
+  const [about, setAbout] = useState(false);
+  const ref = useRef(null);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDocDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const copyInvite = async () => {
+    setOpen(false);
+    // Signup is open on an RSMC instance, so the app's own URL is the invite:
+    // a new person lands on the auth screen and chooses "Create an account".
+    const url = window.location.origin;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Invite link copied", url);
+    } catch {
+      toast.error("Couldn't copy", url);
+    }
+  };
+
+  return (
+    <div className="workspace-menu" ref={ref}>
+      <button
+        className={`workspace-menu-trigger ${open ? "is-open" : ""}`}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <span className="sidebar-workspace">RSMC</span>
+        <Icon name="chevronDown" size={16} />
+      </button>
+
+      {open && (
+        <div className="workspace-menu-dropdown" role="menu">
+          <button className="workspace-menu-item" role="menuitem" onClick={() => { setOpen(false); onBrowse?.(); }}>
+            <Icon name="search" size={16} />
+            <span>Browse channels</span>
+          </button>
+          <button className="workspace-menu-item" role="menuitem" onClick={copyInvite}>
+            <Icon name="copy" size={16} />
+            <span>Invite people</span>
+          </button>
+          <div className="workspace-menu-sep" />
+          <button className="workspace-menu-item" role="menuitem" onClick={() => { setOpen(false); setAbout(true); }}>
+            <Icon name="message" size={16} />
+            <span>About RSMC</span>
+          </button>
+        </div>
+      )}
+
+      {about && <AboutModal onClose={() => setAbout(false)} />}
+    </div>
+  );
+}
+
+function AboutModal({ onClose }) {
+  // Build-time version from package.json, injected by Vite at build.
+  const version = import.meta.env.VITE_APP_VERSION || "dev";
+  return (
+    <Modal title="About RSMC" subtitle="Self-hosted team chat" onClose={onClose} width={420}>
+      <div className="about-body">
+        <p className="about-line"><span>Version</span><strong>{version}</strong></p>
+        <p className="about-note">
+          RSMC is a self-hosted Slack/Mattermost-style team chat platform.
+        </p>
+      </div>
+    </Modal>
   );
 }
 

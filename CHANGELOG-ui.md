@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.12.0] - accessibility contrast, workspace menu, profile popover, name display
+
+### Added
+- **Workspace menu.** The "RSMC" wordmark in the sidebar header is now a menu
+  with Browse channels, Invite people (copies the app URL for open signup), and
+  About. This replaces the standalone search icon in the sidebar header, which
+  was easy to confuse with the message-search icon, so browsing channels and
+  searching messages are no longer two identical-looking icons.
+- **Profile popover.** Clicking a message author's name or avatar in a channel,
+  a member's avatar in the channel members list, or the person's name in a
+  direct-message header, opens a small card with their avatar, online or
+  last-seen status, full name, @username, email, and (except in a DM you're
+  already in) a Message button that opens a direct message.
+- **Name display setting.** A new General tab in the admin console lets an admin
+  choose whether channel message authors are shown by full name or by username.
+  The setting applies to channel messages only; direct messages and the members
+  list are unchanged.
+
+### Changed
+- **"Full name" instead of "Display name".** The signup and profile fields are
+  now labelled "Full name", which is clearer and less easily confused with the
+  username.
+- **User name display in people lists.** People pickers (new direct message, and
+  the add-member search) now show `Full name @username` on one line, with the
+  `@username` omitted when it would just repeat the name (so a user with no full
+  name shows only their username, not `user1 @user1`). The channel members list
+  (the roster) now shows just `@username` to stay uncluttered, with Owner/Admin
+  badges beside it. This replaces the earlier mashed-together `Name@username`.
+- **Muted text contrast.** The muted text color (`--ink-3`), used for sidebar
+  channel names, system messages, attachment filenames and rail labels, was
+  below the WCAG AA contrast ratio (4.5:1) in both light and dark themes. It is
+  now darkened (light) and lightened (dark) to meet AA, while staying visually
+  muted. High-contrast themes were already compliant and are unchanged.
+
 ## [0.11.0] - uploads, lightbox, join/leave messages, and quality-of-life
 
 ### Added

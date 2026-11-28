@@ -41,7 +41,7 @@ function applyReaction(msg, f, added) {
   return { ...msg, reactions };
 }
 
-export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHandled, onJumpToMessage, onChannelChanged, onLeft, onToggleSidebar }) {
+export default function ChannelScreen({ channel, presence, nameMode, jumpTarget, onJumpHandled, onJumpToMessage, onChannelChanged, onLeft, onToggleSidebar, onStartDirect }) {
   const { user } = useAuth();
   const toast = useToast();
   const members = useChannelMembers(channel);
@@ -504,11 +504,13 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
                 <MessageList
                   messages={messages}
                   presence={presence}
+                  nameMode={nameMode}
                   canModerate={canModerate}
                   onOpenThread={openThread}
                   onEdited={onEdited}
                   onDeleted={onDeleted}
                   onPinChanged={onPinChanged}
+                  onStartDirect={onStartDirect}
                   lastReadAt={openReadAt.current}
                   currentUserId={user.id}
                 />
@@ -537,6 +539,7 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
             members={members.members}
             presence={presence}
             canAdminister={members.canAdminister}
+            onStartDirect={onStartDirect}
             onClose={() => setPanel(null)}
             onChanged={async () => {
               await members.reload();
@@ -565,8 +568,10 @@ export default function ChannelScreen({ channel, presence, jumpTarget, onJumpHan
             channel={channel}
             root={thread.root}
             presence={presence}
+            nameMode={nameMode}
             canModerate={canModerate}
             canPost={canPost}
+            onStartDirect={onStartDirect}
             onClose={() => setThread(null)}
           />
         )}

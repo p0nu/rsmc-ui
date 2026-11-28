@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { channelName, displayName } from "../../lib/format.js";
 import Avatar from "../common/Avatar.jsx";
 import Icon from "../common/Icon.jsx";
+import UserPopover from "./UserPopover.jsx";
 
 export default function ChannelHeader({
   channel,
@@ -21,6 +23,11 @@ export default function ChannelHeader({
   const peerOnline = isDirect && channel.peer ? presence[channel.peer.id]?.online : null;
   const title = isDirect ? displayName(channel.peer) : channel.name || "untitled";
 
+  // In a DM, the header's avatar + name open the peer's profile card. No
+  // Message button there (you are already messaging them).
+  const [peerPopover, setPeerPopover] = useState(null); // DOMRect | null
+  const canPeek = isDirect && !!channel.peer;
+
   return (
     <header className="channel-header">
       <button className="channel-header-menu" onClick={onToggleSidebar} aria-label="Menu">
@@ -28,24 +35,35 @@ export default function ChannelHeader({
       </button>
 
       <div className="channel-header-id">
-        <span className="channel-header-glyph">
-          {isDirect ? (
-            channel.peer ? (
+        {canPeek ? (
+          <button
+            className="channel-header-peer"
+            onClick={(e) => setPeerPopover(e.currentTarget.getBoundingClientRect())}
+            title={`View ${displayName(channel.peer)}`}
+          >
+            <span className="channel-header-glyph">
               <Avatar user={channel.peer} size={22} online={!!peerOnline} />
-            ) : (
-              <span
-                className={`presence ${peerOnline ? "online" : ""}`}
-                style={{ width: 11, height: 11 }}
-                role="img"
-                aria-label={peerOnline ? "Online" : "Offline"}
-                title={peerOnline ? "Online" : "Offline"}
-              />
-            )
-          ) : (
-            <Icon name={isPrivate ? "lock" : "hash"} size={18} />
-          )}
-        </span>
-        <h2 className="channel-header-title">{title}</h2>
+            </span>
+            <h2 className="channel-header-title">{title}</h2>
+          </button>
+        ) : (
+          <>
+            <span className="channel-header-glyph">
+              {isDirect ? (
+                <span
+                  className={`presence ${peerOnline ? "online" : ""}`}
+                  style={{ width: 11, height: 11 }}
+                  role="img"
+                  aria-label={peerOnline ? "Online" : "Offline"}
+                  title={peerOnline ? "Online" : "Offline"}
+                />
+              ) : (
+                <Icon name={isPrivate ? "lock" : "hash"} size={18} />
+              )}
+            </span>
+            <h2 className="channel-header-title">{title}</h2>
+          </>
+        )}
         {isDirect && channel.peer && (channel.peer.status_emoji || channel.peer.status_text) && (
           <span className="channel-header-status" title={channel.peer.status_text || ""}>
             {channel.peer.status_emoji && (
@@ -116,6 +134,15 @@ export default function ChannelHeader({
           </button>
         )}
       </div>
+
+      {peerPopover && canPeek && (
+        <UserPopover
+          user={channel.peer}
+          presence={presence}
+          anchorRect={peerPopover}
+          onClose={() => setPeerPopover(null)}
+        />
+      )}
     </header>
   );
 }

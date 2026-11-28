@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { isAdmin } from "../../lib/permissions.js";
 import AdminOverview from "./AdminOverview.jsx";
+import AdminGeneral from "./AdminGeneral.jsx";
 import AdminMembers from "./AdminMembers.jsx";
 import AdminBackup from "./AdminBackup.jsx";
 import AdminIntegrations from "./AdminIntegrations.jsx";
@@ -43,6 +44,9 @@ export default function AdminConsole({ onAppLinksChanged }) {
         <button className={tab === "overview" ? "active" : ""} onClick={() => setTab("overview")}>
           <Icon name="grid" size={17} /> Overview
         </button>
+        <button className={tab === "general" ? "active" : ""} onClick={() => setTab("general")}>
+          <Icon name="settings" size={17} /> General
+        </button>
         <button className={tab === "members" ? "active" : ""} onClick={() => setTab("members")}>
           <Icon name="users" size={17} /> Members &amp; roles
         </button>
@@ -62,6 +66,7 @@ export default function AdminConsole({ onAppLinksChanged }) {
 
       <div className="admin-body">
         {tab === "overview" && <AdminOverview />}
+        {tab === "general" && <AdminGeneral />}
         {tab === "members" && <AdminMembers />}
         {tab === "backup" && <AdminBackup />}
         {tab === "integrations" && <AdminIntegrations onAppLinksChanged={onAppLinksChanged} />}

@@ -65,9 +65,11 @@ export default function NewDirectModal({ onClose, onStarted }) {
           results.map((u) => (
             <button key={u.id} className="user-picker-row" onClick={() => start(u)} disabled={busyId === u.id}>
               <Avatar user={u} size={36} />
-              <span className="user-picker-meta">
+              <span className="user-picker-meta user-picker-inline">
                 <span className="user-picker-name">{displayName(u)}</span>
-                <span className="user-picker-handle">@{u.username}</span>
+                {u.display_name && u.display_name !== u.username && (
+                  <span className="user-picker-handle">@{u.username}</span>
+                )}
               </span>
               {busyId === u.id ? <span className="spinner" /> : <Icon name="message" size={17} />}
             </button>

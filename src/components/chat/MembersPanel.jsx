@@ -6,8 +6,9 @@ import { displayName } from "../../lib/format.js";
 import Avatar from "../common/Avatar.jsx";
 import Icon from "../common/Icon.jsx";
 import { Loading } from "../common/Modal.jsx";
+import UserPopover from "./UserPopover.jsx";
 
-export default function MembersPanel({ channel, members, presence, canAdminister, onClose, onChanged }) {
+export default function MembersPanel({ channel, members, presence, canAdminister, onStartDirect, onClose, onChanged }) {
   const { user } = useAuth();
   const toast = useToast();
   const [query, setQuery] = useState("");
@@ -41,6 +42,13 @@ export default function MembersPanel({ channel, members, presence, canAdminister
   }, [members]);
 
   const presenceFor = (id) => presence[id]?.online ?? localPresence[id]?.online;
+
+  // Merged presence (prop + locally-fetched) for the profile popover, which
+  // needs both online and last_seen.
+  const mergedPresence = { ...localPresence, ...presence };
+
+  // Profile popover opened by clicking a roster member's avatar.
+  const [popover, setPopover] = useState(null); // { user, rect } | null
 
   useEffect(() => {
     if (!canAdminister) return;
@@ -125,9 +133,11 @@ export default function MembersPanel({ channel, members, presence, canAdminister
                   results.map((u) => (
                     <button key={u.id} className="members-result" onClick={() => add(u)} disabled={busyId === u.id}>
                       <Avatar user={u} size={30} />
-                      <span className="members-result-meta">
-                        <span className="members-result-name">{displayName(u)}</span>
-                        <span className="members-result-handle">@{u.username}</span>
+                      <span className="members-result-meta user-picker-inline">
+                        <span className="user-picker-name">{displayName(u)}</span>
+                        {u.display_name && u.display_name !== u.username && (
+                          <span className="user-picker-handle">@{u.username}</span>
+                        )}
                       </span>
                       {busyId === u.id ? <span className="spinner" /> : <Icon name="plus" size={16} />}
                     </button>
@@ -151,17 +161,24 @@ export default function MembersPanel({ channel, members, presence, canAdminister
             const canRemove = me || canAdminister;
             return (
               <div key={m.id} className="member-row">
-                <Avatar user={m} size={36} online={!!online} />
+                <button
+                  className="member-avatar-btn"
+                  onClick={(e) => setPopover({ user: m, rect: e.currentTarget.getBoundingClientRect() })}
+                  title={`View ${displayName(m)}`}
+                >
+                  <Avatar user={m} size={36} online={!!online} />
+                </button>
                 <div className="member-info">
                   <div className="member-name">
-                    {displayName(m)}
+                    @{m.username}
                     {me && <span className="member-you">you</span>}
                   </div>
-                  <div className="member-sub">
-                    @{m.username}
-                    {isOwner && <span className="badge badge-owner" style={{ marginLeft: 6 }}>Owner</span>}
-                    {m.role === "admin" && <span className="badge badge-admin" style={{ marginLeft: 6 }}>Admin</span>}
-                  </div>
+                  {(isOwner || m.role === "admin") && (
+                    <div className="member-sub">
+                      {isOwner && <span className="badge badge-owner">Owner</span>}
+                      {m.role === "admin" && <span className="badge badge-admin" style={{ marginLeft: isOwner ? 6 : 0 }}>Admin</span>}
+                    </div>
+                  )}
                 </div>
                 {canRemove && !isOwner && (
                   <button
@@ -178,6 +195,23 @@ export default function MembersPanel({ channel, members, presence, canAdminister
           })}
         </div>
       </div>
+
+      {popover && (
+        <UserPopover
+          user={popover.user}
+          presence={mergedPresence}
+          anchorRect={popover.rect}
+          onClose={() => setPopover(null)}
+          onMessage={
+            popover.user.id === user.id || !onStartDirect
+              ? undefined
+              : (u) => {
+                  setPopover(null);
+                  onStartDirect(u);
+                }
+          }
+        />
+      )}
     </aside>
   );
 }

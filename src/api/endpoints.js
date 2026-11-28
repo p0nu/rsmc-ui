@@ -169,6 +169,10 @@ export const api = {
   createAppLink: (payload) => http.post("/app-links", payload),
   deleteAppLink: (id) => http.del(`/app-links/${id}`),
 
+  // ---- instance settings ----
+  getSettings: () => http.get("/settings"),
+  updateSettings: (payload) => http.put("/settings", payload),
+
   // ---- health ----
   ready: () => http.get("/readyz"),
 };

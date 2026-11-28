@@ -1,13 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
 
 // In development the Vite server proxies API + WebSocket traffic to the
 // collab-engine backend so the browser talks to a single origin (no CORS).
 // Override with VITE_PROXY_TARGET if the backend runs elsewhere.
 const target = process.env.VITE_PROXY_TARGET || "http://localhost:8080";
 
+// Expose the package version to the app (shown in the About dialog) at build
+// time, so there is no runtime/backend call just to display it.
+const pkgVersion = JSON.parse(readFileSync(new URL("./package.json", import.meta.url))).version;
+
 export default defineConfig({
   plugins: [react()],
+  define: {
+    "import.meta.env.VITE_APP_VERSION": JSON.stringify(pkgVersion),
+  },
   server: {
     port: 5173,
     proxy: {

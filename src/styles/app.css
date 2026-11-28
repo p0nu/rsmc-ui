@@ -257,6 +257,106 @@
   gap: 8px;
   min-width: 0;
 }
+/* Workspace menu: the RSMC wordmark is a dropdown trigger. */
+.workspace-menu {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+}
+.workspace-menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  margin: 0 -4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  min-width: 0;
+}
+.workspace-menu-trigger:hover,
+.workspace-menu-trigger.is-open {
+  background: var(--bg-subtle);
+}
+.workspace-menu-trigger .sidebar-workspace {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-menu-trigger svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: transform 0.15s ease;
+}
+.workspace-menu-trigger.is-open svg {
+  transform: rotate(180deg);
+}
+.workspace-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+.workspace-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+.workspace-menu-item:hover {
+  background: var(--bg-subtle);
+}
+.workspace-menu-item svg {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+.workspace-menu-sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--line);
+}
+.about-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.about-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+.about-line strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.about-note {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
 .sidebar-scroll {
   flex: 1;
   overflow-y: auto;
@@ -543,6 +643,23 @@
   gap: 5px;
   min-width: 0;
 }
+/* In a DM, the avatar + name are a button that opens the peer's profile card. */
+.channel-header-peer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: inherit;
+}
+.channel-header-peer:hover {
+  background: var(--bg-subtle);
+}
 .channel-header-divider {
   width: 1px;
   height: 22px;
@@ -719,6 +836,114 @@
   font-size: 0.9062rem;
   color: var(--ink);
   font-family: var(--font-display);
+  /* It is a button now (opens the profile popover); strip button chrome. */
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+.msg-author:hover {
+  text-decoration: underline;
+}
+.msg-avatar-btn,
+.member-avatar-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  border-radius: 10px;
+}
+.msg-avatar-btn:hover,
+.member-avatar-btn:hover {
+  opacity: 0.9;
+}
+
+/* Profile popover (opened from a message author's name or avatar). */
+.user-popover {
+  position: fixed;
+  z-index: 60;
+  width: 272px;
+  padding: 18px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-surface);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32);
+}
+.user-popover-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 6px;
+}
+.user-popover-close:hover {
+  background: var(--bg-subtle);
+  color: var(--ink);
+}
+.user-popover-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.user-popover-status {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+.user-popover-status.is-online {
+  color: var(--online, #10b981);
+}
+.user-popover-name {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+.user-popover-handle {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+.user-popover-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  color: var(--ink-2);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  overflow: hidden;
+}
+.user-popover-email:hover {
+  color: var(--brand);
+}
+.user-popover-email span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-popover-email svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.user-popover-message {
+  width: 100%;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 .msg-time {
   font-size: 0.7188rem;
@@ -1541,6 +1766,25 @@
 .user-picker-meta {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.3;
+}
+/* Single-line variant: "Full Name @username" (name first, muted handle after). */
+.user-picker-meta.user-picker-inline {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+}
+.user-picker-inline .user-picker-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-picker-inline .user-picker-handle {
+  flex-shrink: 0;
 }
 .members-result-name,
 .user-picker-name {
@@ -1926,6 +2170,68 @@
   padding: 10px 32px 0;
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
+}
+
+/* Admin General tab */
+.admin-section {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.admin-field-head {
+  margin-bottom: 12px;
+}
+.admin-field-title {
+  margin: 0 0 4px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.admin-field-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+.admin-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-radio {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.admin-radio.is-selected {
+  border-color: var(--brand);
+  background: var(--brand-soft, var(--bg-subtle));
+}
+.admin-radio input {
+  grid-row: 1 / span 2;
+  align-self: center;
+  accent-color: var(--brand);
+}
+.admin-radio-main {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.admin-radio-sub {
+  grid-column: 2;
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+.admin-actions {
+  display: flex;
+  justify-content: flex-start;
 }
 .admin-tabs button {
   display: inline-flex;

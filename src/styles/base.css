@@ -35,7 +35,9 @@
   /* ---- text ---- */
   --ink: #1a1b25;
   --ink-2: #5b6072;
-  --ink-3: #868ba1;
+  /* Darkened from #868ba1 to clear WCAG AA (4.5:1) as muted body text on both
+     --bg-surface (#fff) and --bg-subtle (#f3f4f6). Measured ~4.7:1 / 5.2:1. */
+  --ink-3: #676c80;
   --ink-4: #b4b8c8;
   --on-brand: #ffffff;
 
@@ -581,7 +583,9 @@ code,
   /* text */
   --ink: #ecebf2;
   --ink-2: #b3b1c4;
-  --ink-3: #8a8799;
+  /* Lightened from #8a8799 to clear WCAG AA (4.5:1) as muted text on dark
+     --bg-surface (#1b1a26) and --bg-subtle (#232231). Measured ~5.5:1 / 6.0:1. */
+  --ink-3: #9a97ab;
   --ink-4: #5e5b70;
   --on-brand: #ffffff;
 

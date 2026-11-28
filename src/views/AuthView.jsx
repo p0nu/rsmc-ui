@@ -57,7 +57,7 @@ export default function AuthView() {
         await signup({
           email: form.email.trim(),
           username: form.username.trim(),
-          // engine requires a non-empty display name; fall back to username
+          // engine requires a non-empty full name; fall back to username
           display_name: form.display_name.trim() || form.username.trim(),
           password: form.password,
         });
@@ -161,7 +161,7 @@ export default function AuthView() {
                   <span className="field-hint">3-32 characters. Letters, numbers, dot, dash, underscore.</span>
                 </div>
                 <div className="field">
-                  <label className="field-label" htmlFor="display">Display name</label>
+                  <label className="field-label" htmlFor="display">Full name</label>
                   <input
                     id="display" className="input" maxLength={64}
                     value={form.display_name} onChange={set("display_name")} placeholder="Jane Doe"

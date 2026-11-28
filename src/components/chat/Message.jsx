@@ -7,16 +7,19 @@ import Avatar from "../common/Avatar.jsx";
 import Icon from "../common/Icon.jsx";
 import Markdown from "../common/Markdown.jsx";
 import FileAttachment from "../common/FileAttachment.jsx";
+import UserPopover from "./UserPopover.jsx";
 
 export default function Message({
   message,
   grouped,
   presence,
+  nameMode = "full_name", // "full_name" | "username": how to show the author name
   canModerate, // channel owner/admin or system admin can delete others' messages
   onOpenThread,
   onEdited,
   onDeleted,
   onPinChanged,
+  onStartDirect,
 }) {
   const { user } = useAuth();
   const toast = useToast();
@@ -24,6 +27,7 @@ export default function Message({
   const [draft, setDraft] = useState(message.content);
   const [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState(false);
+  const [popAnchor, setPopAnchor] = useState(null); // DOMRect of the clicked name/avatar, or null
 
   const QUICK_EMOJI = ["👍", "❤️", "😂", "🎉", "👀", "✅"];
 
@@ -53,6 +57,17 @@ export default function Message({
   const mine = author?.id === user.id;
   const deleted = !!message.deleted_at;
   const online = author ? presence[author.id]?.online : undefined;
+
+  // Author label respects the instance name-display policy: the username, or
+  // the full name (falling back to username when no full name is set).
+  const authorLabel =
+    nameMode === "username" ? `@${author?.username}` : displayName(author);
+
+  // Open the profile popover anchored to the clicked name/avatar.
+  const openPopover = (e) => {
+    if (!author) return;
+    setPopAnchor(e.currentTarget.getBoundingClientRect());
+  };
   const canDelete = mine || canModerate;
   const pinned = !!message.pinned_at;
 
@@ -105,14 +120,16 @@ export default function Message({
         {grouped ? (
           <span className="msg-rail-time">{clockTime(message.created_at)}</span>
         ) : (
-          <Avatar user={author} size={38} online={online} />
+          <button className="msg-avatar-btn" onClick={openPopover} title={displayName(author)}>
+            <Avatar user={author} size={38} online={online} />
+          </button>
         )}
       </div>
 
       <div className="msg-main">
         {!grouped && (
           <div className="msg-meta">
-            <span className="msg-author">{displayName(author)}</span>
+            <button className="msg-author" onClick={openPopover}>{authorLabel}</button>
             {author?.role === "admin" && <span className="badge badge-admin">Admin</span>}
             <span className="msg-time">{clockTime(message.created_at)}</span>
             {message.edited_at && !deleted && <span className="msg-edited">edited</span>}
@@ -235,6 +252,23 @@ export default function Message({
             </button>
           )}
         </div>
+      )}
+
+      {popAnchor && author && (
+        <UserPopover
+          user={author}
+          presence={presence}
+          anchorRect={popAnchor}
+          onClose={() => setPopAnchor(null)}
+          onMessage={
+            mine || !onStartDirect
+              ? undefined
+              : (u) => {
+                  setPopAnchor(null);
+                  onStartDirect(u);
+                }
+          }
+        />
       )}
     </div>
   );

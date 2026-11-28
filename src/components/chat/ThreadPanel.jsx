@@ -6,7 +6,7 @@ import Composer from "./Composer.jsx";
 import Icon from "../common/Icon.jsx";
 import { Loading } from "../common/Modal.jsx";
 
-export default function ThreadPanel({ channel, root, presence, canModerate, canPost, onClose }) {
+export default function ThreadPanel({ channel, root, presence, nameMode, canModerate, canPost, onStartDirect, onClose }) {
   const [rootMsg, setRootMsg] = useState(root);
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function ThreadPanel({ channel, root, presence, canModerate, canP
 
       <div className="rightpanel-body thread-body">
         <div className="thread-root">
-          <Message message={rootMsg} presence={presence} canModerate={canModerate} />
+          <Message message={rootMsg} presence={presence} nameMode={nameMode} canModerate={canModerate} onStartDirect={onStartDirect} />
         </div>
         <div className="thread-count">
           {(rootMsg.reply_count || replies.length) > 0 && (
@@ -69,7 +69,7 @@ export default function ThreadPanel({ channel, root, presence, canModerate, canP
         ) : (
           <div className="msg-list">
             {replies.map((m) => (
-              <Message key={m.id} message={m} presence={presence} canModerate={canModerate} />
+              <Message key={m.id} message={m} presence={presence} nameMode={nameMode} canModerate={canModerate} onStartDirect={onStartDirect} />
             ))}
           </div>
         )}

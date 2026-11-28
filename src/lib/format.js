@@ -24,6 +24,23 @@ export function timeAgo(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+// Relative "last seen" for the user popover: whole units in words, no decimals.
+// just now / N sec ago / N min ago / N hr ago / N day(s) ago / N month(s) ago.
+export function lastSeenAgo(iso) {
+  if (!iso) return "";
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 10) return "just now";
+  if (s < 60) return `${s} sec ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} hr ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d} day${d === 1 ? "" : "s"} ago`;
+  const mo = Math.floor(d / 30);
+  return `${mo} month${mo === 1 ? "" : "s"} ago`;
+}
+
 export function dayLabel(iso) {
   const d = new Date(iso);
   const today = new Date();

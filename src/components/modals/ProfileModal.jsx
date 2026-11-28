@@ -268,7 +268,7 @@ export default function ProfileModal({ onClose, onOpenSettings, onOpenSecurity }
 
       <form onSubmit={save} className="form">
         <div className="field">
-          <label className="field-label">Display name</label>
+          <label className="field-label">Full name</label>
           <input className="input" value={name} maxLength={64} onChange={(e) => setName(e.target.value)} />
         </div>
 
